@@ -6,6 +6,22 @@ CultureLens AI is a production-grade, highly-optimized, and personalized Generat
 
 ---
 
+## 🌟 Submission Details
+
+- **Chosen Vertical**: AI Travel Guide & Cultural Heritage Archivist
+- **Core Logic & Approach**:
+  1. **Input Validation**: Validates user preferences (destination, duration, style, interests, languages) on both the frontend and backend.
+  2. **Factual Grounding**: Queries Nominatim OpenStreetMap API to resolve destination coordinates and country codes.
+  3. **Concurrent Knowledge Aggregator**: Executes concurrent async HTTP fetches (using `asyncio.gather` and connection-pooled `httpx.AsyncClient`) to aggregate real-time weather (Open-Meteo), factual context (Wikipedia Summary API), local attractions (Wikipedia Search API), and exchange rates (Frankfurter API).
+  4. **Strict JSON Schema Generation**: Configures Gemini 3.5 Flash using strict structured output constraints (`response_schema`), instructing it to build a detailed itinerary, phrasebook, and custom folklore guides using *only* the aggregated factual context.
+  5. **Interactive Dashboard**: Dynamically renders Leaflet map markers, highlights local hidden gems, and opens a conversational tour companion sidebar.
+- **Key Assumptions Made**:
+  - The destination search query is geocodable via the OpenStreetMap Nominatim search service. If the geocoding fails, the system automatically falls back to default coordinates and exchange rates to avoid API failure.
+  - The Frankfurter exchange rates API is available for real-time USD conversion rates. If down, static currency fallbacks are provided.
+  - The Gemini model is configured with a valid `GEMINI_API_KEY` (e.g. injected in the environment).
+
+---
+
 ## 🏛️ System Architecture
 
 ```mermaid

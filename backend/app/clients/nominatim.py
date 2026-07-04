@@ -8,7 +8,7 @@ class NominatimClient:
     _cache = {}
     _cache_ttl = 86400
 
-    def __init__(self, client: httpx.AsyncClient = None):
+    def __init__(self, client: httpx.AsyncClient = None) -> None:
         self.base_url = "https://nominatim.openstreetmap.org"
         self.headers = {
             "User-Agent": "CultureLensAI/1.0 (contact@culturelens.ai; hackathon project)"
@@ -17,6 +17,7 @@ class NominatimClient:
         self._cache = self.__class__._cache
 
     async def get_coordinates(self, destination: str) -> dict:
+
         """Fetches latitude, longitude, and country details for a given destination text."""
         cleaned_dest = destination.strip().lower()
         if cleaned_dest in self._cache:

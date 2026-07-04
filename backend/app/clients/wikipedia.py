@@ -10,7 +10,7 @@ class WikipediaClient:
     _search_cache = {}
     _cache_ttl = 86400  # 24 hours
 
-    def __init__(self, client: httpx.AsyncClient = None):
+    def __init__(self, client: httpx.AsyncClient = None) -> None:
         self.summary_url = "https://en.wikipedia.org/api/rest_v1/page/summary"
         self.search_url = "https://en.wikipedia.org/w/api.php"
         self.headers = {
@@ -19,6 +19,7 @@ class WikipediaClient:
         self.client = client
         self._summary_cache = self.__class__._summary_cache
         self._search_cache = self.__class__._search_cache
+
 
     async def get_page_summary(self, page_title: str) -> str:
         """Fetches the introductory summary of a Wikipedia page."""

@@ -25,7 +25,7 @@ class Settings:
         
     # Security Configurations
     MAX_CONTENT_LENGTH: int = 1024 * 1024  # 1 MB Limit
-    REQUEST_TIMEOUT_SECONDS: float = 30.0   # API timeout limit
+    REQUEST_TIMEOUT_SECONDS: float = 90.0   # API timeout limit
     
     # HTTPX Client parameters
     MAX_CONNECTIONS: int = 100

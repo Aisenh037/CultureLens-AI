@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { DiscoveryBoard } from "../components/DiscoveryBoard";
-import { AttractionItem, HiddenGemItem, FoodItem, EtiquetteGuide, PhraseItem, SustainabilityTips, SafetyGuide, PackingChecklist, HeritageItem } from "../types/travel";
+import { AttractionItem, HiddenGemItem, FoodItem, EtiquetteGuide, PhraseItem, SustainabilityTips, SafetyGuide, PackingChecklist, HeritageItem, EventItem } from "../types/travel";
 
 const mockAttractions: AttractionItem[] = [
   {
@@ -91,6 +91,14 @@ const mockPacking: PackingChecklist = {
   cultural_items: ["Easy slip-on shoes"]
 };
 
+const mockEvents: EventItem[] = [
+  {
+    name: "Gion Matsuri",
+    timing: "July 1-31",
+    description: "A month-long festival featuring massive wooden floats passing through downtown Kyoto."
+  }
+];
+
 describe("DiscoveryBoard Component", () => {
   it("renders tabs correctly and defaults to sights section", () => {
     render(
@@ -104,6 +112,7 @@ describe("DiscoveryBoard Component", () => {
         sustainability={mockSustainability}
         safety={mockSafety}
         packing={mockPacking}
+        events={mockEvents}
       />
     );
 
@@ -129,6 +138,7 @@ describe("DiscoveryBoard Component", () => {
         sustainability={mockSustainability}
         safety={mockSafety}
         packing={mockPacking}
+        events={mockEvents}
       />
     );
 
@@ -152,6 +162,7 @@ describe("DiscoveryBoard Component", () => {
         sustainability={mockSustainability}
         safety={mockSafety}
         packing={mockPacking}
+        events={mockEvents}
       />
     );
 
@@ -166,5 +177,8 @@ describe("DiscoveryBoard Component", () => {
     expect(screen.getByText("119")).toBeInTheDocument();
     // Packing checklist
     expect(screen.getByText("✓ Passport")).toBeInTheDocument();
+    // Events check
+    expect(screen.getByText("Gion Matsuri")).toBeInTheDocument();
+    expect(screen.getByText(/A month-long festival featuring massive wooden floats/i)).toBeInTheDocument();
   });
 });

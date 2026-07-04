@@ -1,13 +1,17 @@
+import time
 import httpx
 from app.config import settings
 
 class WeatherClient:
     """Client to retrieve current and forecast weather statistics from Open-Meteo."""
 
-    def __init__(self):
-        self.url = "https://api.open-meteo.com/v1/forecast"
+    _forecast_cache = {}
+    _cache_ttl = 1800  # 30 minutes
 
-    # WMO Weather interpretation codes
+    def __init__(self, client: httpx.AsyncClient = None):
+        self.url = "https://api.open-meteo.com/v1/forecast"
+        self.client = client
+
     def _interpret_weather_code(self, code: int) -> str:
         codes = {
             0: "Clear sky / Sunny",
@@ -39,6 +43,14 @@ class WeatherClient:
 
     async def get_forecast(self, lat: float, lon: float) -> dict:
         """Retrieves forecast temperature and conditions for coordinates."""
+        cache_key = (round(lat, 2), round(lon, 2))
+        if cache_key in self._forecast_cache:
+            val, expiry = self._forecast_cache[cache_key]
+            if time.time() < expiry:
+                return val
+            else:
+                del self._forecast_cache[cache_key]
+
         params = {
             "latitude": lat,
             "longitude": lon,
@@ -47,38 +59,56 @@ class WeatherClient:
             "timezone": "auto"
         }
         
-        async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT_SECONDS) as client:
+        client = self.client
+        if client is not None:
             try:
                 response = await client.get(self.url, params=params)
-                if response.status_code == 200:
-                    data = response.json()
-                    current = data.get("current_weather", {})
-                    temp = current.get("temperature", 20.0)
-                    wcode = current.get("weathercode", 0)
-                    
-                    daily = data.get("daily", {})
-                    days = daily.get("time", [])
-                    max_temps = daily.get("temperature_2m_max", [])
-                    min_temps = daily.get("temperature_2m_min", [])
-                    wcodes = daily.get("weathercode", [])
-                    
-                    weekly_snippets = []
-                    for i in range(min(5, len(days))):
-                        cond = self._interpret_weather_code(wcodes[i])
-                        weekly_snippets.append(
-                            f"Day {i+1}: Max {max_temps[i]}°C, Min {min_temps[i]}°C ({cond})"
-                        )
-                        
-                    return {
-                        "current_temp": f"{temp}°C",
-                        "conditions": self._interpret_weather_code(wcode),
-                        "weekly_forecast": weekly_snippets
-                    }
+                res = self._parse_forecast_response(response)
+                if res:
+                    self._forecast_cache[cache_key] = (res, time.time() + self._cache_ttl)
+                return res
             except Exception:
                 pass
+        else:
+            async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT_SECONDS) as temp_client:
+                try:
+                    response = await temp_client.get(self.url, params=params)
+                    res = self._parse_forecast_response(response)
+                    if res:
+                        self._forecast_cache[cache_key] = (res, time.time() + self._cache_ttl)
+                    return res
+                except Exception:
+                    pass
                 
         return {
             "current_temp": "22°C",
             "conditions": "Mainly clear",
             "weekly_forecast": ["Day 1: 24°C / 18°C", "Day 2: 23°C / 17°C", "Day 3: 25°C / 16°C"]
         }
+
+    def _parse_forecast_response(self, response: httpx.Response) -> dict:
+        if response.status_code == 200:
+            data = response.json()
+            current = data.get("current_weather", {})
+            temp = current.get("temperature", 20.0)
+            wcode = current.get("weathercode", 0)
+            
+            daily = data.get("daily", {})
+            days = daily.get("time", [])
+            max_temps = daily.get("temperature_2m_max", [])
+            min_temps = daily.get("temperature_2m_min", [])
+            wcodes = daily.get("weathercode", [])
+            
+            weekly_snippets = []
+            for i in range(min(5, len(days))):
+                cond = self._interpret_weather_code(wcodes[i])
+                weekly_snippets.append(
+                    f"Day {i+1}: Max {max_temps[i]}°C, Min {min_temps[i]}°C ({cond})"
+                )
+                
+            return {
+                "current_temp": f"{temp}°C",
+                "conditions": self._interpret_weather_code(wcode),
+                "weekly_forecast": weekly_snippets
+            }
+        raise ValueError("Invalid weather response")

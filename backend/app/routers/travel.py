@@ -1,3 +1,4 @@
+import httpx
 from fastapi import APIRouter, HTTPException, Request, Depends
 from app.schemas.travel import TravelRequest, CultureLensResponse, ChatRequest, ChatMessage
 from app.utils.sanitization import sanitize_string
@@ -16,17 +17,20 @@ logger = logging.getLogger("app.routers.travel")
 router = APIRouter(prefix="/api/travel", tags=["travel"])
 
 # Dependency Injection Providers
-def get_nominatim_client() -> NominatimClient:
-    return NominatimClient()
+def get_http_client(request: Request) -> httpx.AsyncClient:
+    return getattr(request.app.state, "http_client", None)
 
-def get_wikipedia_client() -> WikipediaClient:
-    return WikipediaClient()
+def get_nominatim_client(http_client: httpx.AsyncClient = Depends(get_http_client)) -> NominatimClient:
+    return NominatimClient(client=http_client)
 
-def get_weather_client() -> WeatherClient:
-    return WeatherClient()
+def get_wikipedia_client(http_client: httpx.AsyncClient = Depends(get_http_client)) -> WikipediaClient:
+    return WikipediaClient(client=http_client)
 
-def get_currency_client() -> CurrencyClient:
-    return CurrencyClient()
+def get_weather_client(http_client: httpx.AsyncClient = Depends(get_http_client)) -> WeatherClient:
+    return WeatherClient(client=http_client)
+
+def get_currency_client(http_client: httpx.AsyncClient = Depends(get_http_client)) -> CurrencyClient:
+    return CurrencyClient(client=http_client)
 
 def get_gemini_service() -> GeminiService:
     return GeminiService()
@@ -132,7 +136,7 @@ async def chat_with_guide(
     prompt = build_chat_prompt(sanitized_message, sanitized_history, payload.itinerary_context)
     
     try:
-        reply = gemini.generate_chat_response(prompt)
+        reply = await gemini.generate_chat_response(prompt)
         return {"reply": reply}
     except Exception as e:
         logger.exception("Failed to generate chat response.")
@@ -140,3 +144,4 @@ async def chat_with_guide(
             status_code=500,
             detail="Failed to retrieve guide response due to an internal server error. Please try again."
         )
+

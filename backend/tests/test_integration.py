@@ -99,7 +99,7 @@ def test_generate_travel_endpoint():
 def test_chat_endpoint():
     """Ensures /api/travel/chat returns the guide response using dependency overrides."""
     mock_gemini = MagicMock()
-    mock_gemini.generate_chat_response.return_value = "Hello! Welcome to Kyoto."
+    mock_gemini.generate_chat_response = AsyncMock(return_value="Hello! Welcome to Kyoto.")
     
     app.dependency_overrides[get_gemini_service] = lambda: mock_gemini
     
@@ -117,3 +117,4 @@ def test_chat_endpoint():
         mock_gemini.generate_chat_response.assert_called_once()
     finally:
         app.dependency_overrides.clear()
+

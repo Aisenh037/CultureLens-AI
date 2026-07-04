@@ -282,6 +282,7 @@ export const App: React.FC = () => {
                   sustainability={result.sustainability}
                   safety={result.safety}
                   packing={result.packing}
+                  events={result.events}
                 />
               </section>
 

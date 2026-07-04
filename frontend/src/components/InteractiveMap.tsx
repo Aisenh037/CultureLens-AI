@@ -27,22 +27,31 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   const mapRef = useRef<L.Map | null>(null);
   const containerId = "leaflet-map-element";
 
+  // 1. Initialize map once on mount
   useEffect(() => {
-    // Check if map is already initialized
-    if (!mapRef.current) {
-      mapRef.current = L.map(containerId).setView([lat, lon], 12);
-      
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-      }).addTo(mapRef.current);
-    } else {
-      mapRef.current.setView([lat, lon], 12);
-    }
+    mapRef.current = L.map(containerId).setView([lat, lon], 12);
+    
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(mapRef.current);
 
+    return () => {
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+      }
+    };
+  }, []); // Run ONLY once on mount
+
+  // 2. Update map view and markers when props change
+  useEffect(() => {
+    if (!mapRef.current) return;
     const mapInstance = mapRef.current;
 
+    // Pan/zoom view to new coordinates
+    mapInstance.setView([lat, lon], 12);
+
     // Remove existing markers before rendering new ones
-    // We can clear markers by iterating layers
     mapInstance.eachLayer((layer) => {
       if (layer instanceof L.Marker) {
         mapInstance.removeLayer(layer);
@@ -59,27 +68,20 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       shadowSize: [41, 41]
     });
 
-    // 1. Add center marker
+    // Add center marker
     L.marker([lat, lon], { icon: centerIcon }).addTo(mapInstance)
       .bindPopup(`<b>📍 Center: ${destinationName}</b><br/>Latitude: ${lat}<br/>Longitude: ${lon}`)
       .openPopup();
 
-    // 2. Add markers for each attraction
+    // Add markers for each attraction
     attractions.forEach((attr) => {
       if (attr.latitude && attr.longitude) {
         L.marker([attr.latitude, attr.longitude]).addTo(mapInstance)
           .bindPopup(`<b>🏛️ ${attr.name}</b><br/>${attr.location}<br/><span style="font-size:10px; color:#666;">Cost: ${attr.estimated_cost}</span>`);
       }
     });
-
-    // Cleanup on component unmount
-    return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
-    };
   }, [lat, lon, attractions, destinationName]);
+
 
   return (
     <div className="backdrop-blur-xl bg-slate-900/60 border border-slate-800/80 rounded-3xl p-5 shadow-xl text-slate-100 flex flex-col gap-4">

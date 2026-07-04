@@ -1,23 +1,50 @@
+import time
 import httpx
 from app.config import settings
 
 class CurrencyClient:
     """Client to retrieve currency exchange rates relative to USD from Frankfurter API."""
 
-    def __init__(self):
+    _rates_cache = None
+    _rates_expiry = 0.0
+    _cache_ttl = 21600  # 6 hours
+
+    def __init__(self, client: httpx.AsyncClient = None):
         self.url = "https://api.frankfurter.app/latest"
+        self.client = client
 
     async def get_usd_exchange_rates(self) -> dict:
         """Fetches exchange rates relative to USD."""
+        if self._rates_cache and time.time() < self._rates_expiry:
+            return self._rates_cache
+
         params = {"from": "USD"}
-        async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT_SECONDS) as client:
+        client = self.client
+        if client is not None:
             try:
                 response = await client.get(self.url, params=params)
                 if response.status_code == 200:
                     data = response.json()
-                    return data.get("rates", {})
+                    rates = data.get("rates", {})
+                    if rates:
+                        self.__class__._rates_cache = rates
+                        self.__class__._rates_expiry = time.time() + self._cache_ttl
+                    return rates
             except Exception:
                 pass
+        else:
+            async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT_SECONDS) as temp_client:
+                try:
+                    response = await temp_client.get(self.url, params=params)
+                    if response.status_code == 200:
+                        data = response.json()
+                        rates = data.get("rates", {})
+                        if rates:
+                            self.__class__._rates_cache = rates
+                            self.__class__._rates_expiry = time.time() + self._cache_ttl
+                        return rates
+                except Exception:
+                    pass
         # Fallback values
         return {
             "JPY": 155.0,

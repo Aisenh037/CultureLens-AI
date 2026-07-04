@@ -86,9 +86,13 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({
       </div>
 
       {/* Day Toggles */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+      <div role="tablist" aria-label="Day selection" className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
         {itinerary.map((day, idx) => (
           <button
+            role="tab"
+            id={`day-tab-${day.day_number}`}
+            aria-selected={selectedDayIndex === idx}
+            aria-controls={`day-panel-${day.day_number}`}
             key={day.day_number}
             onClick={() => {
               setSelectedDayIndex(idx);
@@ -96,7 +100,7 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({
             }}
             className={`px-3.5 py-2 rounded-lg border text-xs font-bold whitespace-nowrap transition-all ${
               selectedDayIndex === idx
-                ? "bg-emerald-600 text-slate-950 dark:text-slate-950 border-emerald-500 shadow-md shadow-emerald-500/10"
+                ? "bg-emerald-600 text-slate-950 dark:text-slate-955 border-emerald-500 shadow-md shadow-emerald-500/10"
                 : "bg-slate-100 dark:bg-slate-950/40 border-slate-200 dark:border-slate-850 text-slate-650 dark:text-slate-450 hover:border-slate-350 dark:hover:border-slate-800 hover:text-slate-900 dark:hover:text-slate-200"
             }`}
           >
@@ -105,14 +109,21 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({
         ))}
       </div>
 
-      {/* Daily theme */}
-      <div className="bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-855 p-3 rounded-xl">
-        <span className="text-[9px] font-bold tracking-widest text-emerald-600 dark:text-emerald-450 uppercase">Focus Theme</span>
-        <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-0.5">{currentDay.theme}</h3>
-      </div>
+      {/* Daily theme & Timeline Panel */}
+      <div 
+        id={`day-panel-${currentDay.day_number}`} 
+        role="tabpanel" 
+        aria-labelledby={`day-tab-${currentDay.day_number}`}
+        className="flex flex-col gap-6"
+      >
+        {/* Daily theme */}
+        <div className="bg-slate-100 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-855 p-3 rounded-xl">
+          <span className="text-[9px] font-bold tracking-widest text-emerald-600 dark:text-emerald-450 uppercase">Focus Theme</span>
+          <h3 className="text-xs font-bold text-slate-700 dark:text-slate-300 mt-0.5">{currentDay.theme}</h3>
+        </div>
 
-      {/* Vertical Timeline */}
-      <div className="flex flex-col relative before:absolute before:top-2 before:bottom-2 before:left-[14px] before:w-[1px] before:bg-slate-250 dark:before:bg-slate-850 gap-6 mt-1">
+        {/* Vertical Timeline */}
+        <div className="flex flex-col relative before:absolute before:top-2 before:bottom-2 before:left-[14px] before:w-[1px] before:bg-slate-250 dark:before:bg-slate-850 gap-6 mt-1">
         {currentDay.activities.map((act, idx) => {
           const matchStory = findStoryForActivity(act.activity_name);
           const isStoryExpanded = expandedStoryIndex === `${selectedDayIndex}-${idx}`;
@@ -195,6 +206,7 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({
           );
         })}
       </div>
+    </div>
     </div>
   );
 };

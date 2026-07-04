@@ -50,7 +50,7 @@ def get_orchestrator(
         gemini=gemini
     )
 
-def check_request_size(request: Request):
+def check_request_size(request: Request) -> None:
     """Enforces request body size limits from headers."""
     content_length = request.headers.get("content-length")
     if content_length:
@@ -90,7 +90,7 @@ async def generate_travel_plan(
     payload: TravelRequest, 
     request: Request,
     orchestrator: TravelOrchestrator = Depends(get_orchestrator)
-):
+) -> CultureLensResponse:
     """Sanitizes input preferences, aggregates factual external context, and runs Gemini to generate an itinerary."""
     check_request_size(request)
     
@@ -117,7 +117,7 @@ async def chat_with_guide(
     payload: ChatRequest, 
     request: Request,
     gemini: GeminiService = Depends(get_gemini_service)
-):
+) -> dict[str, str]:
     """Converses with the Interactive Tour Guide chatbot in context of the itinerary."""
     check_request_size(request)
     
@@ -144,4 +144,5 @@ async def chat_with_guide(
             status_code=500,
             detail="Failed to retrieve guide response due to an internal server error. Please try again."
         )
+
 

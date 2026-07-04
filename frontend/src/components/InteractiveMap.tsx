@@ -91,6 +91,8 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
       </div>
       <div 
         id={containerId} 
+        role="region"
+        aria-label={`Interactive map of ${destinationName} showing local attractions`}
         className="h-[350px] w-full rounded-2xl border border-slate-800 bg-slate-950 z-10"
       />
     </div>

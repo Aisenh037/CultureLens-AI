@@ -5,12 +5,15 @@ from app.config import settings
 class WeatherClient:
     """Client to retrieve current and forecast weather statistics from Open-Meteo."""
 
-    _forecast_cache = {}
+    _cache = {}
+    _forecast_cache = _cache
     _cache_ttl = 1800  # 30 minutes
 
     def __init__(self, client: httpx.AsyncClient = None):
         self.url = "https://api.open-meteo.com/v1/forecast"
         self.client = client
+        self._cache = self.__class__._cache
+        self._forecast_cache = self.__class__._forecast_cache
 
     def _interpret_weather_code(self, code: int) -> str:
         codes = {
@@ -44,12 +47,16 @@ class WeatherClient:
     async def get_forecast(self, lat: float, lon: float) -> dict:
         """Retrieves forecast temperature and conditions for coordinates."""
         cache_key = (round(lat, 2), round(lon, 2))
-        if cache_key in self._forecast_cache:
-            val, expiry = self._forecast_cache[cache_key]
-            if time.time() < expiry:
-                return val
+        if cache_key in self._cache:
+            entry = self._cache[cache_key]
+            if isinstance(entry, tuple) and len(entry) == 2:
+                val, expiry = entry
+                if time.time() < expiry:
+                    return val
+                else:
+                    del self._cache[cache_key]
             else:
-                del self._forecast_cache[cache_key]
+                return entry
 
         params = {
             "latitude": lat,
@@ -59,26 +66,41 @@ class WeatherClient:
             "timezone": "auto"
         }
         
-        client = self.client
-        if client is not None:
-            try:
-                response = await client.get(self.url, params=params)
-                res = self._parse_forecast_response(response)
-                if res:
-                    self._forecast_cache[cache_key] = (res, time.time() + self._cache_ttl)
-                return res
-            except Exception:
-                pass
-        else:
-            async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT_SECONDS) as temp_client:
-                try:
-                    response = await temp_client.get(self.url, params=params)
-                    res = self._parse_forecast_response(response)
-                    if res:
-                        self._forecast_cache[cache_key] = (res, time.time() + self._cache_ttl)
-                    return res
-                except Exception:
-                    pass
+        try:
+            if self.client:
+                response = await self.client.get(self.url, params=params)
+            else:
+                async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT_SECONDS) as local_client:
+                    response = await local_client.get(self.url, params=params)
+                    
+            if response.status_code == 200:
+                data = response.json()
+                current = data.get("current_weather", {})
+                temp = current.get("temperature", 20.0)
+                wcode = current.get("weathercode", 0)
+                
+                daily = data.get("daily", {})
+                days = daily.get("time", [])
+                max_temps = daily.get("temperature_2m_max", [])
+                min_temps = daily.get("temperature_2m_min", [])
+                wcodes = daily.get("weathercode", [])
+                
+                weekly_snippets = []
+                for i in range(min(5, len(days))):
+                    cond = self._interpret_weather_code(wcodes[i])
+                    weekly_snippets.append(
+                        f"Day {i+1}: Max {max_temps[i]}°C, Min {min_temps[i]}°C ({cond})"
+                    )
+                    
+                result = {
+                    "current_temp": f"{temp}°C",
+                    "conditions": self._interpret_weather_code(wcode),
+                    "weekly_forecast": weekly_snippets
+                }
+                self._cache[cache_key] = (result, time.time() + self._cache_ttl)
+                return result
+        except Exception:
+            pass
                 
         return {
             "current_temp": "22°C",
@@ -86,29 +108,3 @@ class WeatherClient:
             "weekly_forecast": ["Day 1: 24°C / 18°C", "Day 2: 23°C / 17°C", "Day 3: 25°C / 16°C"]
         }
 
-    def _parse_forecast_response(self, response: httpx.Response) -> dict:
-        if response.status_code == 200:
-            data = response.json()
-            current = data.get("current_weather", {})
-            temp = current.get("temperature", 20.0)
-            wcode = current.get("weathercode", 0)
-            
-            daily = data.get("daily", {})
-            days = daily.get("time", [])
-            max_temps = daily.get("temperature_2m_max", [])
-            min_temps = daily.get("temperature_2m_min", [])
-            wcodes = daily.get("weathercode", [])
-            
-            weekly_snippets = []
-            for i in range(min(5, len(days))):
-                cond = self._interpret_weather_code(wcodes[i])
-                weekly_snippets.append(
-                    f"Day {i+1}: Max {max_temps[i]}°C, Min {min_temps[i]}°C ({cond})"
-                )
-                
-            return {
-                "current_temp": f"{temp}°C",
-                "conditions": self._interpret_weather_code(wcode),
-                "weekly_forecast": weekly_snippets
-            }
-        raise ValueError("Invalid weather response")

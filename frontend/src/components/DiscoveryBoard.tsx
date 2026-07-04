@@ -51,10 +51,13 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
       </div>
 
       {/* Tabs */}
-      <div className="grid grid-cols-3 bg-slate-100 dark:bg-slate-955/60 border border-slate-200 dark:border-slate-850 p-1.5 rounded-2xl">
+      <div role="tablist" aria-label="Culture Discovery Sections" className="grid grid-cols-3 bg-slate-100 dark:bg-slate-955/60 border border-slate-200 dark:border-slate-850 p-1.5 rounded-2xl">
         <button
+          role="tab"
+          id="sights-tab"
+          aria-selected={activeTab === "sights"}
+          aria-controls="sights-panel"
           onClick={() => setActiveTab("sights")}
-          aria-pressed={activeTab === "sights"}
           className={`py-2 px-1 rounded-xl text-xs font-bold transition-all ${
             activeTab === "sights"
               ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 shadow-sm"
@@ -64,8 +67,11 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
           🏛️ Sights & Gems
         </button>
         <button
+          role="tab"
+          id="cuisine-tab"
+          aria-selected={activeTab === "cuisine"}
+          aria-controls="cuisine-panel"
           onClick={() => setActiveTab("cuisine")}
-          aria-pressed={activeTab === "cuisine"}
           className={`py-2 px-1 rounded-xl text-xs font-bold transition-all ${
             activeTab === "cuisine"
               ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 shadow-sm"
@@ -75,8 +81,11 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
           🍜 Food & Culture
         </button>
         <button
+          role="tab"
+          id="practical-tab"
+          aria-selected={activeTab === "practical"}
+          aria-controls="practical-panel"
           onClick={() => setActiveTab("practical")}
-          aria-pressed={activeTab === "practical"}
           className={`py-2 px-1 rounded-xl text-xs font-bold transition-all ${
             activeTab === "practical"
               ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 shadow-sm"
@@ -89,7 +98,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
 
       {/* Tab 1: Sights & Gems */}
       {activeTab === "sights" && (
-        <div className="flex flex-col gap-6 animate-fade-in">
+        <div id="sights-panel" role="tabpanel" aria-labelledby="sights-tab" className="flex flex-col gap-6 animate-fade-in">
           {/* Heritage Explorer */}
           {heritage && heritage.length > 0 && (
             <div className="bg-slate-100/30 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-850 p-4 rounded-2xl flex flex-col gap-3">
@@ -221,7 +230,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
 
       {/* Tab 2: Food & Culture */}
       {activeTab === "cuisine" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+        <div id="cuisine-panel" role="tabpanel" aria-labelledby="cuisine-tab" className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
           {/* Foods list */}
           <div className="flex flex-col gap-4 bg-slate-100/30 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-850 p-4 rounded-2xl">
             <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-855/60">
@@ -290,7 +299,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
 
       {/* Tab 3: Practical Guide */}
       {activeTab === "practical" && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
+        <div id="practical-panel" role="tabpanel" aria-labelledby="practical-tab" className="grid grid-cols-1 lg:grid-cols-2 gap-6 animate-fade-in">
           
           {/* Phrases, Vocab & Festivals */}
           <div className="flex flex-col gap-6">

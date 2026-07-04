@@ -53,8 +53,20 @@ class TravelOrchestrator:
         )
 
         # 3. Knowledge Aggregator: Merge real context
-        # Retrieve rate for local currency code, default to 1.0 if not found or USD
-        local_currency = geo_context.get("country_code", "USD")
+        # Translate geocoded ISO country code to local currency code
+        country_code = geo_context.get("country_code", "US").upper()
+        country_to_currency = {
+            "US": "USD", "GB": "GBP", "JP": "JPY", "IN": "INR",
+            "FR": "EUR", "DE": "EUR", "IT": "EUR", "ES": "EUR",
+            "CA": "CAD", "AU": "AUD", "CN": "CNY", "NZ": "NZD",
+            "CH": "CHF", "SG": "SGD", "HK": "HKD", "AE": "AED",
+            "BR": "BRL", "MX": "MXN", "ZA": "ZAR", "KR": "KRW",
+            "TH": "THB", "MY": "MYR", "ID": "IDR", "PH": "PHP",
+            "VN": "VND", "RU": "RUB", "TR": "TRY", "SA": "SAR",
+            "EG": "EGP", "SE": "SEK", "NO": "NOK", "DK": "DKK",
+            "PL": "PLN"
+        }
+        local_currency = country_to_currency.get(country_code, "USD")
         rate = exchange_rates.get(local_currency, 1.0)
         
         # Prepare factual context block
@@ -76,7 +88,7 @@ FACTUAL DESTINATION DATA:
 
         # 5. Gemini Structured Generation
         logger.info("Calling Gemini structured generation service")
-        result = self.gemini.generate_structured_itinerary(prompt)
+        result = await self.gemini.generate_structured_itinerary(prompt)
         
         # Make sure latitude/longitude are set to real API values to prevent hallucinated markers on map
         result.destination.latitude = lat
@@ -86,6 +98,7 @@ FACTUAL DESTINATION DATA:
         result.destination.currency_code = local_currency
         
         return result
+
 
     def _build_prompt(self, request: TravelRequest, factual_context: str, geo_context: dict, conditions: str) -> str:
         interests_str = ", ".join(request.interests)

@@ -1,91 +1,89 @@
-# CookFlow AI
+# CultureLens AI
 
-CookFlow AI is a high-performance, personalized daily cooking planner and budget calculator powered by Google Gemini API. It designs customized meal plans (Breakfast, Lunch, and Dinner) matching available ingredients, specific budget boundaries, dietary restrictions, and kitchen skills while coordinating a unified shopping list, ingredient substitution alternatives, and a synchronized timeline to prepare everything with minimal stress.
+> **"Discover destinations like a local, not a tourist."**
 
-## Features
-
-- **Personalized Cooking Plans**: Generates Breakfast, Lunch, and Dinner recommendations matching user constraint profile.
-- **Checkable Shopping List**: Ingredients grouped by category (Produce, Pantry, Dairy, Meat) with estimated cost.
-- **Synchronized Cooking Timeline**: Time-interval steps specifying actions to synchronize meal prep and cooking.
-- **Ingredient Substitutions**: Clean table specifying alternative items and logical swap justifications.
-- **Detailed Budget Cards**: Highlights overall cost calculations, per-person estimations, and smart money-saving advice.
-- **Accessible & Premium Dark Mode**: High-contrast accessibility features, keyboard navigation, and micro-animations.
+CultureLens AI is a production-grade, highly-optimized, and personalized Generative AI travel companion platform designed for Google's **PromptWars** Hackathon. It assists travelers in discovering authentic heritage sites, off-the-beaten-path hidden gems, and local dining traditions while creating customized daily itineraries, explaining folklore stories, and teaching local etiquette.
 
 ---
 
-## Directory Structure
+## 🏛️ System Architecture
+
+```mermaid
+graph TD
+    A[User Input Form] -->|Validate Zod / Hook Form| B[Retrieve Coordinates]
+    B -->|Nominatim OSM| C[Knowledge Aggregator]
+    C -->|Parallel Async API Fetch| D[wikipedia REST API]
+    C -->|Parallel Async API Fetch| E[Open-Meteo API]
+    C -->|Parallel Async API Fetch| F[Frankfurter API]
+    D & E & F -->|Merge Context| G[Prompt Builder]
+    G -->|Inject Facts & Profile| H[Gemini 3.5 Flash]
+    H -->|response_schema Validation| I[CultureLens Response JSON]
+    I -->|JSON Schema Check| J[React Dashboard]
+    J -->|Interactive Leaflet Map| K[OpenStreetMap Markers]
+    J -->|Immersive Audio Guide| L[Chatbot Sidebar]
+```
+
+---
+
+## 📁 Folder Structure
 
 ```
 PromptWar/
 ├── backend/
 │   ├── app/
+│   │   ├── clients/             # Factual API clients
+│   │   │   ├── nominatim.py     # OSM Coordinates search
+│   │   │   ├── wikipedia.py     # Heritage & summary text
+│   │   │   ├── weather.py       # Open-Meteo climate stats
+│   │   │   └── currency.py      # Frankfurter conversion rates
 │   │   ├── prompts/
-│   │   │   └── prompt_builder.py
+│   │   │   └── travel_prompt.py # Chat & guide prompts
 │   │   ├── routers/
-│   │   │   └── planner.py
+│   │   │   └── travel.py        # /generate & /chat routes
 │   │   ├── schemas/
-│   │   │   └── planner.py
+│   │   │   └── travel.py        # Pydantic response models
 │   │   ├── services/
-│   │   │   └── gemini_service.py
+│   │   │   ├── gemini.py        # Gemini API client
+│   │   │   └── orchestrator.py  # Concurrent orchestrator pipeline
 │   │   ├── utils/
-│   │   │   └── sanitization.py
-│   │   ├── config.py
-│   │   └── main.py
-│   ├── tests/
-│   │   ├── test_integration.py
-│   │   └── test_unit.py
-│   ├── requirements.txt
-│   ├── .env.example
-│   └── render.yaml
+│   │   │   └── sanitization.py  # Text XSS & injection filters
+│   │   ├── config.py            # CORS & server settings
+│   │   └── main.py              # FastAPI app setup
+│   ├── tests/                   # Pytest suite
+│   ├── requirements.txt         # Pip requirements
+│   └── render.yaml              # Render blueprint config
 ├── frontend/
 │   ├── src/
-│   │   ├── __tests__/
-│   │   │   └── PlannerForm.test.tsx
-│   │   ├── components/
-│   │   │   ├── BudgetCard.tsx
-│   │   │   ├── Button.tsx
-│   │   │   ├── CookingTimeline.tsx
-│   │   │   ├── ErrorMessage.tsx
-│   │   │   ├── Input.tsx
-│   │   │   ├── LoadingIndicator.tsx
-│   │   │   ├── MealCards.tsx
-│   │   │   ├── PlannerForm.tsx
-│   │   │   ├── Select.tsx
-│   │   │   ├── ShoppingList.tsx
-│   │   │   ├── Substitutions.tsx
-│   │   │   ├── Textarea.tsx
-│   │   │   └── ThemeToggle.tsx
-│   │   ├── hooks/
-│   │   │   └── usePlanner.ts
-│   │   ├── services/
-│   │   │   └── api.ts
-│   │   ├── test/
-│   │   │   └── setup.ts
+│   │   ├── components/          # React layout widgets
+│   │   │   ├── DiscoveryBoard.tsx # Sights, Food, and Safety Tabs
+│   │   │   ├── ItineraryTimeline.tsx # Chronological itinerary with story mode
+│   │   │   ├── InteractiveMap.tsx  # Leaflet OpenStreetMap markers
+│   │   │   ├── InteractiveGuide.tsx # Chatbot local guide sidebar
+│   │   │   ├── LoadingIndicator.tsx # Visual animated skeleton loader
+│   │   │   └── ErrorMessage.tsx   # Access error boundaries
 │   │   ├── types/
-│   │   │   └── planner.ts
+│   │   │   └── travel.ts        # TypeScript interface models
+│   │   ├── services/
+│   │   │   └── api.ts           # Fetch API hooks
 │   │   ├── utils/
-│   │   │   ├── theme.ts
-│   │   │   └── validation.ts
-│   │   ├── App.tsx
-│   │   ├── index.css
-│   │   └── main.tsx
-│   ├── index.html
-│   ├── package.json
-│   ├── postcss.config.js
-│   ├── tailwind.config.js
-│   ├── tsconfig.json
-│   ├── vercel.json
-│   └── .env.example
+│   │   │   └── validation.ts    # Frontend Zod-like validations
+│   │   ├── App.tsx              # Main Dashboard frame
+│   │   └── main.tsx             # DOM bootstrapper
+│   ├── package.json             # NPM dependencies
+│   ├── tailwind.config.js       # Tailwind CSS styles
+│   └── vite.config.ts           # Bundler settings
 └── README.md
 ```
 
 ---
 
-## Local Setup
+## 🚀 Installation & Local Setup
 
-### Backend Setup
+### Prerequisite
+Ensure Python 3.11+ and Node.js 18+ are installed.
 
-1. Navigate to the backend directory:
+### 1. Backend Setup
+1. Navigate to the backend folder:
    ```bash
    cd backend
    ```
@@ -93,74 +91,61 @@ PromptWar/
    ```bash
    pip install -r requirements.txt
    ```
-3. Copy environment configuration and configure your Gemini API Key:
+3. Copy environment configuration:
    ```bash
    cp .env.example .env
-   # Open .env and populate GEMINI_API_KEY="your-gemini-key"
-   ```
-4. Start the FastAPI development server:
+    # Populate GEMINI_API_KEY="your-gemini-api-key" in .env
+    # Optionally configure GEMINI_MODEL="models/gemini-1.5-flash" (defaults to models/gemini-3.5-flash)
+    ```
+4. Start development server:
    ```bash
    uvicorn app.main:app --reload
    ```
-   The backend server will run on `http://localhost:8000`.
+   The backend will run on `http://localhost:8000`.
 
-### Frontend Setup
-
-1. Navigate to the frontend directory:
+### 2. Frontend Setup
+1. Navigate to the frontend folder:
    ```bash
    cd ../frontend
    ```
-2. Install NodeJS packages:
+2. Install dependencies:
    ```bash
    npm install
    ```
-3. Copy environment configurations:
-   ```bash
-   cp .env.example .env
-   ```
-4. Start the Vite React development server:
+3. Start the Vite React server:
    ```bash
    npm run dev
    ```
-   The frontend application will run on `http://localhost:5173`.
+   Open `http://localhost:5173` in your browser.
 
 ---
 
-## Verification & Testing
+## 🧪 Testing
 
-### Backend Verification
-Verify that both the unit and integration tests compile and run successfully:
+### Backend tests
+Validate geocoding API clients, sanitizers, and routing mock states using `pytest`:
 ```bash
 cd backend
 pytest
 ```
 
-### Frontend Verification
-Run component unit tests:
+### Frontend tests
+Verify component renders and submit handlers using `vitest`:
 ```bash
 cd frontend
 npm run test
 ```
-Build production bundles to verify compilation sanity:
-```bash
-npm run build
-```
 
 ---
 
-## Deployment Instructions
+## 🔒 Security Measures
+* **Sanitization**: Regular expression checks sanitize user queries and chatbot conversation logs to strip script tags and prevent injections.
+* **Information Leakage**: Raw traceback reports are hidden from endpoints; stack details are written in logs while users receive safe error responses.
+* **CORS Settings**: Restricts accepted headers and origins using custom whitelist rules to prevent unauthorized API fetches.
 
-### Deploy Frontend (Vercel)
-The project includes a `vercel.json` routing configuration setup. You can deploy it using the Vercel CLI:
-```bash
-cd frontend
-vercel
-```
-Ensure you add `VITE_API_BASE_URL` pointing to your deployed backend URL.
+---
 
-### Deploy Backend (Render)
-The project includes a `render.yaml` configuration setup. In Render dashboard:
-1. Create a new Web Service.
-2. Link your GitHub repository.
-3. Configure `GEMINI_API_KEY` and `ALLOWED_ORIGINS` environment variables.
-4. Render automatically parses build and launch commands from the repository `render.yaml` blueprint.
+## ⚡ Performance Optimization
+* **Parallel Client Calls**: Utilizes `asyncio.gather` to retrieve geo, weather, exchange rates, and wiki text in parallel, reducing fetch overhead.
+* **API response_schema Validation**: Directs Gemini 3.5 Flash to return schema-compliant outputs using native JSON formats, reducing context token waste and parsing retry loops.
+* **Token Budget Compression**: Condenses the generated itinerary into short structural summaries before passing context to the chat guide, optimizing prompt length and reducing chatbot response latencies.

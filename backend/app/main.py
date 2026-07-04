@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import planner
+from app.routers import travel
 from app.config import settings
 
 app = FastAPI(
-    title="CookFlow AI API",
-    description="Backend service for generating personalized cooking plans using Gemini.",
+    title="AI Travel Guide & Itinerary API",
+    description="Backend service for generating personalized travel plans and itineraries using Gemini.",
     version="1.0.0"
 )
 
@@ -19,9 +19,9 @@ app.add_middleware(
 )
 
 # Include Routers
-app.include_router(planner.router)
+app.include_router(travel.router)
 
 @app.get("/")
 def read_root():
     """Simple API status healthcheck."""
-    return {"status": "healthy", "service": "CookFlow AI API"}
+    return {"status": "healthy", "service": "AI Travel Guide & Itinerary API"}

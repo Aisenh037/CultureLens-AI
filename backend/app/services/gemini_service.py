@@ -1,49 +1,60 @@
 import json
 import google.generativeai as genai
 from app.config import settings
-from app.schemas.planner import PlannerResponse
+from app.schemas.travel import TravelResponse
 
 class GeminiService:
-    """Service to interact with Google Gemini API and validate structured JSON output."""
+    """Service to interact with Google Gemini API and validate structured JSON output for Travel Guides."""
 
     def __init__(self):
         # Configure Gemini API client
         genai.configure(api_key=settings.GEMINI_API_KEY)
         self.model = genai.GenerativeModel("gemini-3.5-flash")
 
-    def _call_gemini(self, prompt: str) -> str:
-        """Invokes the Gemini API with instructions to return JSON."""
-        # Use response_mime_type to force JSON return
-        generation_config = {"response_mime_type": "application/json"}
-        response = self.model.generate_content(
-            prompt, 
-            generation_config=generation_config
-        )
-        return response.text.strip() if response.text else ""
-
-    def _parse_and_validate(self, text: str) -> PlannerResponse:
-        """Parses the text response to JSON and validates against the schema."""
-        # Clean markdown code blocks if the model generated any
-        if text.startswith("```"):
-            lines = text.split("\n")
-            if lines[0].startswith("```json") or lines[0].startswith("```"):
-                text = "\n".join(lines[1:-1])
-        
-        data = json.loads(text.strip())
-        return PlannerResponse(**data)
-
-    def get_plan(self, prompt: str) -> PlannerResponse:
-        """Fetches the cooking plan from Gemini with a single retry on parsing failure."""
+    def get_travel_plan(self, prompt: str) -> TravelResponse:
+        """Fetches the travel plan from Gemini using response_schema constraint."""
         try:
-            raw_response = self._call_gemini(prompt)
-            return self._parse_and_validate(raw_response)
-        except Exception as first_error:
-            # Retry exactly once
+            # We enforce the TravelResponse Pydantic schema using response_schema
+            generation_config = {
+                "response_mime_type": "application/json",
+                "response_schema": TravelResponse
+            }
+            response = self.model.generate_content(
+                prompt,
+                generation_config=generation_config
+            )
+            raw_text = response.text.strip() if response.text else ""
+            
+            # Since the API guarantees compliance, we can safely load it
+            data = json.loads(raw_text)
+            return TravelResponse(**data)
+        except Exception as e:
+            # Fallback retry with raw JSON prompt instruction
             try:
-                retry_prompt = f"{prompt}\n\nIMPORTANT: Your previous output failed verification. Make sure it matches the JSON format perfectly."
-                raw_response = self._call_gemini(retry_prompt)
-                return self._parse_and_validate(raw_response)
-            except Exception as second_error:
+                generation_config = {"response_mime_type": "application/json"}
+                response = self.model.generate_content(
+                    f"{prompt}\n\nIMPORTANT: Return a JSON conforming to the TravelResponse schema structure.",
+                    generation_config=generation_config
+                )
+                raw_text = response.text.strip() if response.text else ""
+                
+                # Clean markdown blocks if any
+                if raw_text.startswith("```"):
+                    lines = raw_text.split("\n")
+                    if lines[0].startswith("```json") or lines[0].startswith("```"):
+                        raw_text = "\n".join(lines[1:-1])
+                
+                data = json.loads(raw_text.strip())
+                return TravelResponse(**data)
+            except Exception as retry_error:
                 raise ValueError(
-                    f"Gemini output parsing failed after retry. Details: {second_error}"
-                ) from first_error
+                    f"Gemini travel plan generation failed: {str(retry_error)}"
+                ) from e
+
+    def get_chat_response(self, prompt: str) -> str:
+        """Gets a conversational response from Gemini for the interactive guide."""
+        try:
+            response = self.model.generate_content(prompt)
+            return response.text.strip() if response.text else ""
+        except Exception as e:
+            raise ValueError(f"Gemini chat response failed: {str(e)}")

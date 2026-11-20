@@ -146,3 +146,7 @@ cd frontend && npm test && npm run build                      # 26 tests + type-
 ## Deployment
 
 `render.yaml` defines both services. Render auto-deploys from `main`; set `GEMINI_API_KEY` in the dashboard, and set `ALLOWED_ORIGINS` to the frontend URL.
+
+## Branching
+
+`dev` → `uat` → `main`. Work lands on `dev`, is promoted to `uat` for testing, and reaches `main` (which Render deploys) by pull request. CI runs on all three. Dependabot opens grouped weekly version updates against `dev`; security updates target `main` directly.

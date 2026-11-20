@@ -136,3 +136,98 @@ async def test_weather_caching():
     assert res["current_temp"] == "99°C"
     assert res["conditions"] == "Super Hot"
 
+
+
+# --- Provider contracts -------------------------------------------------------
+# These pin the request format and response shape each public API documents,
+# so a provider change fails CI instead of silently degrading production.
+
+@pytest.mark.asyncio
+async def test_weather_uses_current_open_meteo_contract():
+    seen = {}
+
+    def handler(request):
+        seen.update(request.url.params)
+        return httpx.Response(200, json={
+            "current": {"temperature_2m": 12.5, "weather_code": 61},
+            "daily": {
+                "time": ["2026-11-20", "2026-11-21"],
+                "temperature_2m_max": [14.0, 15.1],
+                "temperature_2m_min": [6.2, 7.0],
+                "weather_code": [61, 0],
+            },
+        })
+
+    async with _client(handler) as http:
+        res = await WeatherClient(client=http).get_forecast(11.111, 22.222)
+    assert seen["current"] == "temperature_2m,weather_code"
+    assert "weather_code" in seen["daily"]
+    assert "current_weather" not in seen
+    assert res == {
+        "current_temp": "12.5°C",
+        "conditions": "Slight rain",
+        "weekly_forecast": [
+            "Day 1: Max 14.0°C, Min 6.2°C (Slight rain)",
+            "Day 2: Max 15.1°C, Min 7.0°C (Clear sky / Sunny)",
+        ],
+    }
+
+
+@pytest.mark.asyncio
+async def test_weather_non_200_is_none_and_logged(caplog):
+    async with _client(lambda r: httpx.Response(400, json={"reason": "bad param"})) as http:
+        res = await WeatherClient(client=http).get_forecast(33.333, 44.444)
+    assert res is None
+    assert "Open-Meteo returned HTTP 400" in caplog.text
+
+
+@pytest.mark.asyncio
+async def test_currency_uses_frankfurter_dev_with_usd_base():
+    CurrencyClient._cache = None
+    seen = {}
+
+    def handler(request):
+        seen["url"] = str(request.url)
+        return httpx.Response(200, json={"amount": 1.0, "base": "USD", "rates": {"INR": 84.1}})
+
+    async with _client(handler) as http:
+        rates = await CurrencyClient(client=http).get_usd_exchange_rates()
+    assert seen["url"] == "https://api.frankfurter.dev/v1/latest?base=USD"
+    assert rates == {"INR": 84.1, "USD": 1.0}
+    CurrencyClient._cache = None
+
+
+@pytest.mark.asyncio
+async def test_shared_client_follows_provider_redirects():
+    """A 301 from a provider (as Frankfurter's old domain now returns) must be followed."""
+    CurrencyClient._cache = None
+
+    def handler(request):
+        if request.url.host == "api.frankfurter.dev":
+            return httpx.Response(301, headers={"Location": "https://moved.example/latest?base=USD"})
+        return httpx.Response(200, json={"rates": {"JPY": 150.0}})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler), follow_redirects=True) as http:
+        rates = await CurrencyClient(client=http).get_usd_exchange_rates()
+    assert rates["JPY"] == 150.0
+    CurrencyClient._cache = None
+
+
+def test_app_http_client_follows_redirects():
+    from fastapi.testclient import TestClient
+    from app.main import app
+    with TestClient(app):
+        assert app.state.http_client.follow_redirects is True
+
+
+@pytest.mark.asyncio
+async def test_nominatim_requests_english_names():
+    seen = {}
+
+    def handler(request):
+        seen["lang"] = request.headers.get("accept-language")
+        return httpx.Response(200, json=[])
+
+    async with _client(handler) as http:
+        await NominatimClient(client=http).get_coordinates("Kyoto-test-lang")
+    assert seen["lang"] == "en"

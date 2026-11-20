@@ -17,7 +17,9 @@ class NominatimClient:
     def __init__(self, client: httpx.AsyncClient = None) -> None:
         self.base_url = "https://nominatim.openstreetmap.org"
         self.headers = {
-            "User-Agent": "CultureLensAI/1.0 (contact@culturelens.ai; hackathon project)"
+            "User-Agent": "CultureLensAI/1.0 (contact@culturelens.ai; hackathon project)",
+            # Without this, names come back in the local script (e.g. 京都市).
+            "Accept-Language": "en",
         }
         self.client = client
 

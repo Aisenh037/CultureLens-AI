@@ -41,6 +41,12 @@ class Settings:
     # (or its bounding box, whichever is larger) are discarded.
     MIN_ATTRACTION_RADIUS_KM: float = float(os.getenv("MIN_ATTRACTION_RADIUS_KM", "50"))
 
+    # MET Norway requires an identifying User-Agent with a contact method
+    # (https://api.met.no/doc/TermsOfService). Override with your own domain/email.
+    MET_USER_AGENT: str = os.getenv(
+        "MET_USER_AGENT", "CultureLensAI/1.0 github.com/Aisenh037/CultureLens-AI"
+    )
+
     # HTTPX Client parameters
     MAX_CONNECTIONS: int = 100
     MAX_KEEPALIVE_CONNECTIONS: int = 20

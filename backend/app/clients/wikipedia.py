@@ -45,11 +45,30 @@ class WikipediaClient:
                     
             if response.status_code == 200:
                 data = response.json()
-                extract = data.get("extract", "")
+                # A disambiguation page ("Cambridge may refer to...") is not a
+                # description of the place, so treat it as no match.
+                extract = "" if data.get("type") == "disambiguation" else data.get("extract", "")
                 self._summary_cache[cleaned_title] = (extract, time.time() + self._cache_ttl)
                 return extract
         except Exception:
             pass
+        return ""
+
+    async def get_destination_summary(self, candidates: list[str]) -> str:
+        """Return the first non-empty summary among candidate page titles.
+
+        What a user types ("Kyoto, Japan") is rarely a Wikipedia title, so the
+        orchestrator passes the geocoded short name first, then fallbacks.
+        """
+        seen = set()
+        for title in candidates:
+            key = (title or "").strip().lower()
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            extract = await self.get_page_summary(title.strip())
+            if extract:
+                return extract
         return ""
 
     async def search_heritage_sites(self, destination: str) -> list[dict]:

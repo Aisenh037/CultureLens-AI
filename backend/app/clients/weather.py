@@ -1,6 +1,11 @@
+import logging
 import time
+from typing import Optional
+
 import httpx
 from app.config import settings
+
+logger = logging.getLogger("app.clients.weather")
 
 class WeatherClient:
     """Client to retrieve current and forecast weather statistics from Open-Meteo."""
@@ -44,8 +49,8 @@ class WeatherClient:
         }
         return codes.get(code, "Clear / Moderate weather")
 
-    async def get_forecast(self, lat: float, lon: float) -> dict:
-        """Retrieves forecast temperature and conditions for coordinates."""
+    async def get_forecast(self, lat: float, lon: float) -> Optional[dict]:
+        """Retrieves forecast temperature and conditions for coordinates, or None on failure."""
         cache_key = (round(lat, 2), round(lon, 2))
         if cache_key in self._cache:
             entry = self._cache[cache_key]
@@ -76,8 +81,8 @@ class WeatherClient:
             if response.status_code == 200:
                 data = response.json()
                 current = data.get("current_weather", {})
-                temp = current.get("temperature", 20.0)
-                wcode = current.get("weathercode", 0)
+                temp = current["temperature"]
+                wcode = current["weathercode"]
                 
                 daily = data.get("daily", {})
                 days = daily.get("time", [])
@@ -99,12 +104,8 @@ class WeatherClient:
                 }
                 self._cache[cache_key] = (result, time.time() + self._cache_ttl)
                 return result
-        except Exception:
-            pass
-                
-        return {
-            "current_temp": "22°C",
-            "conditions": "Mainly clear",
-            "weekly_forecast": ["Day 1: 24°C / 18°C", "Day 2: 23°C / 17°C", "Day 3: 25°C / 16°C"]
-        }
+        except (httpx.HTTPError, KeyError, IndexError, TypeError, ValueError):
+            logger.warning("Open-Meteo request failed for (%s, %s)", lat, lon, exc_info=True)
 
+        # No invented weather: callers show "unavailable" instead.
+        return None

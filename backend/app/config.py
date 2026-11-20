@@ -4,31 +4,46 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
+
+def _env_bool(name: str, default: bool) -> bool:
+    return os.getenv(name, str(default)).strip().lower() in {"1", "true", "yes", "on"}
+
+
 class Settings:
     """Application configuration and settings management."""
-    
+
     PROJECT_NAME: str = "CultureLens AI API"
     VERSION: str = "1.0.0"
-    
+
     # Gemini API Credentials
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "models/gemini-3.5-flash")
-    
-    # Allowed CORS Origins (Comma-separated string)
+
+    # Allowed CORS origins (comma-separated). There is deliberately no "*"
+    # fallback: an unset value means "local dev only", never "anyone".
     ALLOWED_ORIGINS_RAW: str = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
-    
+
     @property
     def ALLOWED_ORIGINS(self) -> list[str]:
-        if not self.ALLOWED_ORIGINS_RAW:
-            return ["*"]
-        return [origin.strip() for origin in self.ALLOWED_ORIGINS_RAW.split(",")]
-        
+        origins = [o.strip() for o in self.ALLOWED_ORIGINS_RAW.split(",") if o.strip()]
+        return [o for o in origins if o != "*"] or ["http://localhost:5173"]
+
     # Security Configurations
-    MAX_CONTENT_LENGTH: int = 1024 * 1024  # 1 MB Limit
-    REQUEST_TIMEOUT_SECONDS: float = 90.0   # API timeout limit
-    
+    MAX_CONTENT_LENGTH: int = int(os.getenv("MAX_CONTENT_LENGTH", str(256 * 1024)))  # 256 KB
+    REQUEST_TIMEOUT_SECONDS: float = 90.0
+
+    # Rate limits (per client IP), slowapi syntax.
+    RATE_LIMIT_ENABLED: bool = _env_bool("RATE_LIMIT_ENABLED", True)
+    GENERATE_RATE_LIMIT: str = os.getenv("GENERATE_RATE_LIMIT", "5/minute;30/hour")
+    CHAT_RATE_LIMIT: str = os.getenv("CHAT_RATE_LIMIT", "20/minute")
+
+    # Grounding: generated attractions farther than this from the destination
+    # (or its bounding box, whichever is larger) are discarded.
+    MIN_ATTRACTION_RADIUS_KM: float = float(os.getenv("MIN_ATTRACTION_RADIUS_KM", "50"))
+
     # HTTPX Client parameters
     MAX_CONNECTIONS: int = 100
     MAX_KEEPALIVE_CONNECTIONS: int = 20
-    
+
+
 settings = Settings()

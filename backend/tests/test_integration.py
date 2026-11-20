@@ -1,69 +1,11 @@
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 from app.main import app
 from app.routers.travel import get_orchestrator, get_gemini_service
-from app.schemas.travel import CultureLensResponse, DestinationInfo, WeatherOverview, BudgetOverview, EtiquetteGuide, SustainabilityTips, SafetyGuide, PackingChecklist
+from tests.factories import make_response
 
 client = TestClient(app)
-
-# Mock CultureLensResponse matching the schemas/travel.py response model
-mock_travel_response = CultureLensResponse(
-    destination=DestinationInfo(
-        name="Kyoto, Japan",
-        latitude=35.0116,
-        longitude=135.7681,
-        country="Japan",
-        currency_code="JPY",
-        timezone="Asia/Tokyo"
-    ),
-    summary="A cultural hub filled with shrines and traditional foods.",
-    top_attractions=[],
-    hidden_gems=[],
-    heritage=[],
-    stories=[],
-    food=[],
-    events=[],
-    weather=WeatherOverview(
-        current_temp="18°C",
-        conditions="Sunny",
-        weekly_forecast=["Day 1: Sunny", "Day 2: Clear"]
-    ),
-    budget=BudgetOverview(
-        currency="JPY",
-        estimated_daily_cost="15000 JPY",
-        saving_tips=["Buy bus day passes"]
-    ),
-    itinerary=[],
-    local_phrases=[],
-    etiquette=EtiquetteGuide(
-        greetings="Bow politely",
-        dress_code="Modest in temples",
-        photography_rules="Respect private signs",
-        temple_etiquette="Remove shoes",
-        dining_etiquette="Do not pass food chopsticks-to-chopsticks",
-        tipping="No tipping allowed",
-        local_customs="Keep voice low in public",
-        common_mistakes=["Walking and eating"]
-    ),
-    sustainability=SustainabilityTips(
-        public_transport="Use Hankyu Line",
-        walking_routes="Walk along Kamo river",
-        local_businesses="Eat at traditional Nishiki shops",
-        plastic_reduction="Bring personal bottle",
-        responsible_tourism="Do not harass Maikos"
-    ),
-    safety=SafetyGuide(
-        emergency_number="110",
-        common_scams=["Overpriced bars"],
-        safe_neighborhoods=["Gion", "Shimogyo"],
-        health_tips=["Drink water"]
-    ),
-    packing=PackingChecklist(
-        essentials=["Passport", "Charger"],
-        seasonal_items=["Umbrella"],
-        cultural_items=["Easy slip-off shoes"]
-    )
-)
+mock_travel_response = make_response()
 
 def test_generate_travel_endpoint():
     """Ensures /api/travel/generate returns valid response when using dependency overrides."""

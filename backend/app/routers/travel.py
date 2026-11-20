@@ -3,13 +3,14 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from app.schemas.travel import TravelRequest, CultureLensResponse, ChatRequest, ChatMessage
 from app.utils.sanitization import sanitize_string
 from app.prompts.travel_prompt import build_chat_prompt
-from app.services.orchestrator import TravelOrchestrator
+from app.services.orchestrator import TravelOrchestrator, DestinationNotFoundError
 from app.services.gemini import GeminiService
 from app.clients.nominatim import NominatimClient
 from app.clients.wikipedia import WikipediaClient
 from app.clients.weather import WeatherClient
 from app.clients.currency import CurrencyClient
 from app.config import settings
+from app.rate_limit import limiter
 import logging
 
 logger = logging.getLogger("app.routers.travel")
@@ -50,23 +51,6 @@ def get_orchestrator(
         gemini=gemini
     )
 
-def check_request_size(request: Request) -> None:
-    """Enforces request body size limits from headers."""
-    content_length = request.headers.get("content-length")
-    if content_length:
-        try:
-            length = int(content_length)
-            if length > settings.MAX_CONTENT_LENGTH:
-                raise HTTPException(
-                    status_code=413, 
-                    detail="Request body size exceeds the allowed limit."
-                )
-        except ValueError:
-            raise HTTPException(
-                status_code=400, 
-                detail="Invalid Content-Length header."
-            )
-
 def sanitize_travel_request(payload: TravelRequest) -> TravelRequest:
     """Sanitizes inputs to prevent XSS or prompt injections."""
     sanitized_interests = [sanitize_string(interest) for interest in payload.interests]
@@ -86,14 +70,13 @@ def sanitize_travel_request(payload: TravelRequest) -> TravelRequest:
     )
 
 @router.post("/generate", response_model=CultureLensResponse)
+@limiter.limit(settings.GENERATE_RATE_LIMIT)
 async def generate_travel_plan(
-    payload: TravelRequest, 
+    payload: TravelRequest,
     request: Request,
     orchestrator: TravelOrchestrator = Depends(get_orchestrator)
 ) -> CultureLensResponse:
     """Sanitizes input preferences, aggregates factual external context, and runs Gemini to generate an itinerary."""
-    check_request_size(request)
-    
     if not settings.GEMINI_API_KEY:
         raise HTTPException(
             status_code=500,
@@ -103,9 +86,13 @@ async def generate_travel_plan(
     sanitized_payload = sanitize_travel_request(payload)
     
     try:
-        result = await orchestrator.run_pipeline(sanitized_payload)
-        return result
-    except Exception as e:
+        return await orchestrator.run_pipeline(sanitized_payload)
+    except DestinationNotFoundError:
+        raise HTTPException(
+            status_code=422,
+            detail="We couldn't find that destination. Try a city and country, e.g. 'Kyoto, Japan'."
+        )
+    except Exception:
         logger.exception("Failed to run travel orchestration pipeline.")
         raise HTTPException(
             status_code=500,
@@ -113,14 +100,13 @@ async def generate_travel_plan(
         )
 
 @router.post("/chat")
+@limiter.limit(settings.CHAT_RATE_LIMIT)
 async def chat_with_guide(
-    payload: ChatRequest, 
+    payload: ChatRequest,
     request: Request,
     gemini: GeminiService = Depends(get_gemini_service)
 ) -> dict[str, str]:
     """Converses with the Interactive Tour Guide chatbot in context of the itinerary."""
-    check_request_size(request)
-    
     if not settings.GEMINI_API_KEY:
         raise HTTPException(
             status_code=500,
@@ -129,7 +115,7 @@ async def chat_with_guide(
         
     sanitized_message = sanitize_string(payload.message)
     sanitized_history = [
-        ChatMessage(role=sanitize_string(msg.role), content=sanitize_string(msg.content))
+        ChatMessage(role=msg.role, content=sanitize_string(msg.content))
         for msg in payload.history
     ]
     
@@ -138,7 +124,7 @@ async def chat_with_guide(
     try:
         reply = await gemini.generate_chat_response(prompt)
         return {"reply": reply}
-    except Exception as e:
+    except Exception:
         logger.exception("Failed to generate chat response.")
         raise HTTPException(
             status_code=500,

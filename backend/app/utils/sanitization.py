@@ -1,20 +1,32 @@
 import re
+import unicodedata
+
+_TAG_RE = re.compile(r"<[^>]*>")
+_WHITESPACE_RE = re.compile(r"[ \t]+")
+
 
 def sanitize_string(value: str) -> str:
-    """Sanitizes user input string by stripping HTML tags and trimming whitespace.
-    
-    Limits potential injection or HTML/XSS issues in model prompt context.
+    """Normalise user text before it is placed in a prompt.
+
+    - strips HTML tags and markdown code fences,
+    - removes control/format characters (keeps newline and tab),
+    - keeps every letter, number, punctuation mark and currency symbol, so real
+      inputs like "Xi'an", "Côte d'Ivoire" and "₹50,000" survive intact.
+
+    This is *not* a prompt-injection defence: no character filter can stop
+    plain-English instructions. Injection is handled structurally instead
+    (user data is fenced and labelled as data in the prompt, chat roles are
+    restricted, and model output is never rendered as HTML).
     """
     if not value:
         return ""
-    
-    # Strip HTML tags
-    clean = re.sub(r'<[^>]*>', '', value)
-    
-    # Strip common markdown control markers that might confuse prompting
+
+    clean = unicodedata.normalize("NFKC", value)
+    clean = _TAG_RE.sub("", clean)
     clean = clean.replace("```", "")
-    
-    # Remove control characters except newline and tab
-    clean = "".join(ch for ch in clean if ch.isalnum() or ch.isspace() or ch in ".,?!-:;()[]{}@/\\_*+=%")
-    
+    clean = "".join(
+        ch for ch in clean
+        if ch in "\n\t" or not unicodedata.category(ch).startswith("C")
+    )
+    clean = _WHITESPACE_RE.sub(" ", clean)
     return clean.strip()

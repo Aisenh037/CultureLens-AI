@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { AttractionItem } from "../types/travel";
+import { buildPopupContent } from "../utils/safe";
 
 // Solve default Leaflet icon loading bug in Vite/Webpack builds
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -70,14 +71,22 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
 
     // Add center marker
     L.marker([lat, lon], { icon: centerIcon }).addTo(mapInstance)
-      .bindPopup(`<b>📍 Center: ${destinationName}</b><br/>Latitude: ${lat}<br/>Longitude: ${lon}`)
+      .bindPopup(buildPopupContent([
+        { text: `📍 Center: ${destinationName}`, bold: true },
+        { text: `Latitude: ${lat}` },
+        { text: `Longitude: ${lon}` },
+      ]))
       .openPopup();
 
     // Add markers for each attraction
     attractions.forEach((attr) => {
       if (attr.latitude && attr.longitude) {
         L.marker([attr.latitude, attr.longitude]).addTo(mapInstance)
-          .bindPopup(`<b>🏛️ ${attr.name}</b><br/>${attr.location}<br/><span style="font-size:10px; color:#666;">Cost: ${attr.estimated_cost}</span>`);
+          .bindPopup(buildPopupContent([
+            { text: `🏛️ ${attr.name}`, bold: true },
+            { text: attr.location },
+            { text: `Cost: ${attr.estimated_cost}`, small: true },
+          ]));
       }
     });
   }, [lat, lon, attractions, destinationName]);

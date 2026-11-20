@@ -16,8 +16,8 @@ CultureLens AI is a production-grade, highly-optimized, and personalized Generat
   4. **Strict JSON Schema Generation**: Configures Gemini 3.5 Flash using strict structured output constraints (`response_schema`), instructing it to build a detailed itinerary, phrasebook, and custom folklore guides using *only* the aggregated factual context.
   5. **Interactive Dashboard**: Dynamically renders Leaflet map markers, highlights local hidden gems, and opens a conversational tour companion sidebar.
 - **Key Assumptions Made**:
-  - The destination search query is geocodable via the OpenStreetMap Nominatim search service. If the geocoding fails, the system automatically falls back to default coordinates and exchange rates to avoid API failure.
-  - The Frankfurter exchange rates API is available for real-time USD conversion rates. If down, static currency fallbacks are provided.
+  - The destination must be geocodable via OpenStreetMap Nominatim. If it is not, the API returns `422` with a clear message instead of guessing a location.
+  - Exchange rates come from Frankfurter (ECB reference rates, ~30 currencies). If a rate is unavailable, the guide says so rather than inventing one. The same applies to weather.
   - The Gemini model is configured with a valid `GEMINI_API_KEY` (e.g. injected in the environment).
 
 ---
@@ -26,7 +26,7 @@ CultureLens AI is a production-grade, highly-optimized, and personalized Generat
 
 ```mermaid
 graph TD
-    A[User Input Form] -->|Validate Zod / Hook Form| B[Retrieve Coordinates]
+    A[User Input Form] -->|Client + Pydantic validation| B[Retrieve Coordinates]
     B -->|Nominatim OSM| C[Knowledge Aggregator]
     C -->|Parallel Async API Fetch| D[wikipedia REST API]
     C -->|Parallel Async API Fetch| E[Open-Meteo API]
@@ -36,7 +36,7 @@ graph TD
     H -->|response_schema Validation| I[CultureLens Response JSON]
     I -->|JSON Schema Check| J[React Dashboard]
     J -->|Interactive Leaflet Map| K[OpenStreetMap Markers]
-    J -->|Immersive Audio Guide| L[Chatbot Sidebar]
+    J -->|Interactive Guide| L[Chatbot Sidebar]
 ```
 
 ---
@@ -82,7 +82,8 @@ PromptWar/
 │   │   ├── services/
 │   │   │   └── api.ts           # Fetch API hooks
 │   │   ├── utils/
-│   │   │   └── validation.ts    # Frontend Zod-like validations
+│   │   │   ├── safe.ts          # Safe URL + popup rendering for model output
+│   │   │   └── validation.ts    # Frontend form validation
 │   │   ├── App.tsx              # Main Dashboard frame
 │   │   └── main.tsx             # DOM bootstrapper
 │   ├── package.json             # NPM dependencies
@@ -138,26 +139,34 @@ Ensure Python 3.11+ and Node.js 18+ are installed.
 
 ## 🧪 Testing
 
+Both suites are hermetic: no Gemini key and no network access needed. CI runs them on every push and pull request (`.github/workflows/ci.yml`).
+
 ### Backend tests
-Validate geocoding API clients, sanitizers, and routing mock states using `pytest`:
 ```bash
 cd backend
+pip install -r requirements-dev.txt
 pytest
 ```
+Covers API clients (with a mocked HTTP transport), grounding rules, input bounds, CORS, body-size limit and rate limiting.
+
+Manual smoke checks against a real key and running server live in `backend/scripts/`.
 
 ### Frontend tests
-Verify component renders and submit handlers using `vitest`:
 ```bash
 cd frontend
-npm run test
+npm test
+npm run build
 ```
 
 ---
 
 ## 🔒 Security Measures
-* **Sanitization**: Regular expression checks sanitize user queries and chatbot conversation logs to strip script tags and prevent injections.
-* **Information Leakage**: Raw traceback reports are hidden from endpoints; stack details are written in logs while users receive safe error responses.
-* **CORS Settings**: Restricts accepted headers and origins using custom whitelist rules to prevent unauthorized API fetches.
+* **Grounded output**: Coordinates, country, currency code and weather in the response come from the source APIs, overwriting whatever the model wrote. Generated attractions located outside the destination are discarded. Missing facts are reported as unavailable, never defaulted.
+* **Input bounds**: Every request field has a length limit, lists are capped, and chat history is limited to the last 20 turns. Request bodies over 256 KB are rejected before parsing.
+* **Prompt injection**: Not solvable with character filtering, so it is handled structurally: user text is fenced and labelled as data in prompts, chat roles are restricted to `user`/`assistant`, and the sanitizer only strips markup and control characters (real names like *Xi'an* and amounts like *₹50,000* survive).
+* **Safe rendering**: Model output is never injected as HTML. Map popups are built as DOM text nodes, and links and images are only used if they are `https:` URLs.
+* **CORS & abuse**: Explicit origin allow-list (a `*` value is ignored), no credentials, and per-IP rate limits on the Gemini-backed endpoints (`GENERATE_RATE_LIMIT`, `CHAT_RATE_LIMIT`). Limits are in-memory per process; use Redis storage when running multiple instances.
+* **Information leakage**: Stack traces are logged server-side; clients receive generic error messages.
 
 ---
 

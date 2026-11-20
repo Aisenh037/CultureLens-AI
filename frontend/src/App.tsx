@@ -343,6 +343,13 @@ export const App: React.FC = () => {
       {/* Footer */}
       <footer className="py-6 border-t border-slate-200 dark:border-slate-900 text-center text-[10px] uppercase font-bold tracking-widest text-slate-500 dark:text-slate-650 bg-slate-100 dark:bg-slate-950 mt-12 print:hidden">
         CultureLens AI • Google for Developers Hackathon Project
+        <p className="mt-2 normal-case tracking-normal font-medium">
+          Weather data:{" "}
+          <a href="https://www.met.no/en" target="_blank" rel="noopener noreferrer" className="underline">MET Norway</a>
+          {" "}(
+          <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer" className="underline">CC BY 4.0</a>
+          ) · Maps © OpenStreetMap contributors
+        </p>
       </footer>
     </div>
   );

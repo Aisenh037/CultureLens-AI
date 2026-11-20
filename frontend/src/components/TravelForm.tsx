@@ -117,7 +117,7 @@ export const TravelForm: React.FC<TravelFormProps> = ({
               value={formData.destination}
               onChange={(e) => handleFieldChange("destination", e.target.value)}
               placeholder="e.g. Kyoto, Japan or Rome, Italy"
-              className={`w-full py-3.5 pl-11 pr-4 bg-slate-100/50 dark:bg-slate-950/50 border rounded-xl outline-none focus:ring-2 transition-all font-medium text-sm text-slate-900 dark:text-slate-100 ${
+              className={`w-full py-3.5 pl-11 pr-4 bg-slate-100/50 dark:bg-slate-950/50 border rounded-xl outline-hidden focus:ring-2 transition-all font-medium text-sm text-slate-900 dark:text-slate-100 ${
                 errors.destination
                   ? "border-rose-500/50 focus:ring-rose-500/25"
                   : "border-slate-250 dark:border-slate-800 focus:border-emerald-500/80 focus:ring-emerald-500/20"
@@ -167,7 +167,7 @@ export const TravelForm: React.FC<TravelFormProps> = ({
                 aria-pressed={isSelected}
                 className={`flex flex-col items-center justify-center gap-2.5 p-3.5 rounded-2xl border transition-all duration-200 ${
                   isSelected
-                    ? "bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                    ? "bg-emerald-500/15 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-xs"
                     : "bg-slate-100/40 dark:bg-slate-950/40 border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-800 dark:hover:text-slate-200"
                 }`}
               >
@@ -188,7 +188,7 @@ export const TravelForm: React.FC<TravelFormProps> = ({
           value={formData.companions}
           onChange={(e) => handleFieldChange("companions", e.target.value)}
           placeholder="e.g. traveling with spouse, kids aged 5 and 9, or old university friends"
-          className="w-full py-3 px-4 bg-slate-100/50 dark:bg-slate-950/50 border border-slate-250 dark:border-slate-800 rounded-xl outline-none focus:border-emerald-500/80 focus:ring-1 focus:ring-emerald-500/20 text-xs text-slate-800 dark:text-slate-200"
+          className="w-full py-3 px-4 bg-slate-100/50 dark:bg-slate-950/50 border border-slate-250 dark:border-slate-800 rounded-xl outline-hidden focus:border-emerald-500/80 focus:ring-1 focus:ring-emerald-500/20 text-xs text-slate-800 dark:text-slate-200"
         />
       </div>
 
@@ -335,7 +335,7 @@ export const TravelForm: React.FC<TravelFormProps> = ({
       <button
         type="submit"
         disabled={loading}
-        className="w-full mt-4 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-500 text-slate-950 py-4 px-6 rounded-xl font-extrabold tracking-wider hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/10"
+        className="w-full mt-4 bg-linear-to-r from-emerald-600 via-teal-500 to-emerald-500 text-slate-950 py-4 px-6 rounded-xl font-extrabold tracking-wider hover:opacity-90 active:scale-[0.99] transition-all flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/10"
       >
         {loading ? (
           <>

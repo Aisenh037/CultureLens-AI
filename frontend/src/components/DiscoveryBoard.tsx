@@ -61,7 +61,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
           onClick={() => setActiveTab("sights")}
           className={`py-2 px-1 rounded-xl text-xs font-bold transition-all ${
             activeTab === "sights"
-              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 shadow-sm"
+              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 shadow-xs"
               : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-350"
           }`}
         >
@@ -75,7 +75,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
           onClick={() => setActiveTab("cuisine")}
           className={`py-2 px-1 rounded-xl text-xs font-bold transition-all ${
             activeTab === "cuisine"
-              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 shadow-sm"
+              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 shadow-xs"
               : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-350"
           }`}
         >
@@ -89,7 +89,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
           onClick={() => setActiveTab("practical")}
           className={`py-2 px-1 rounded-xl text-xs font-bold transition-all ${
             activeTab === "practical"
-              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 shadow-sm"
+              ? "bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 border border-slate-200 dark:border-slate-800 shadow-xs"
               : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-350"
           }`}
         >
@@ -127,7 +127,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
               {attractions.map((attr, idx) => {
                 const isExpanded = expandedAttraction === idx;
                 return (
-                  <div key={idx} className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 rounded-2xl overflow-hidden transition-all duration-200 hover:border-slate-350 dark:hover:border-slate-800 flex flex-col shadow-sm">
+                  <div key={idx} className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 rounded-2xl overflow-hidden transition-all duration-200 hover:border-slate-350 dark:hover:border-slate-800 flex flex-col shadow-xs">
                     {/* Hero Image */}
                     <div className="h-32 w-full relative overflow-hidden bg-slate-900">
                       <img 
@@ -139,10 +139,10 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
                           if (img.src !== FALLBACK_HERO_IMAGE) img.src = FALLBACK_HERO_IMAGE;
                         }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent" />
+                      <div className="absolute inset-0 bg-linear-to-t from-slate-950 to-transparent" />
                       <div className="absolute bottom-2.5 left-3.5 right-3.5 flex items-end justify-between">
                         <span className="text-xs font-bold text-white drop-shadow-md">{attr.name}</span>
-                        <span className="text-[9px] font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-350 px-2 py-0.5 rounded drop-shadow">
+                        <span className="text-[9px] font-semibold bg-emerald-500/10 border border-emerald-500/30 text-emerald-350 px-2 py-0.5 rounded-sm drop-shadow-sm">
                           {attr.location}
                         </span>
                       </div>
@@ -208,7 +208,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {hiddenGems.map((gem, idx) => (
-                <div key={idx} className="bg-white/60 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 p-4 rounded-xl flex flex-col gap-2 shadow-sm">
+                <div key={idx} className="bg-white/60 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-850 p-4 rounded-xl flex flex-col gap-2 shadow-xs">
                   <h4 className="text-xs font-bold text-emerald-650 dark:text-emerald-400">{gem.name}</h4>
                   <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed">{gem.why_locals_love_it}</p>
                   
@@ -240,10 +240,10 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
               Authentic Local Cuisine
             </h3>
             {food.map((item, idx) => (
-              <div key={idx} className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 p-3.5 rounded-xl flex flex-col gap-2 shadow-sm">
+              <div key={idx} className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 p-3.5 rounded-xl flex flex-col gap-2 shadow-xs">
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-bold text-rose-600 dark:text-rose-400">{item.dish}</h4>
-                  <span className="text-[9px] font-bold bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded">
+                  <span className="text-[9px] font-bold bg-rose-500/10 border border-rose-500/30 text-rose-600 dark:text-rose-400 px-2 py-0.5 rounded-sm">
                     {item.vegetarian_status}
                   </span>
                 </div>
@@ -251,7 +251,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
                 <div className="text-[10px] text-slate-500 mt-1 border-t border-slate-200 dark:border-slate-850/30 pt-2 flex flex-col gap-1.5">
                   <div>🛒 <span className="font-bold text-slate-700 dark:text-slate-400">Ingredients:</span> {item.ingredients.join(", ")}</div>
                   <div>💰 <span className="font-bold text-slate-700 dark:text-slate-400">Estimated Cost:</span> {item.average_cost} (Find near: {item.nearby_area})</div>
-                  <div className="bg-rose-50 dark:bg-rose-955/10 border border-rose-200 dark:border-rose-500/15 p-2 rounded text-slate-700 dark:text-slate-355">
+                  <div className="bg-rose-50 dark:bg-rose-955/10 border border-rose-200 dark:border-rose-500/15 p-2 rounded-sm text-slate-700 dark:text-slate-355">
                     🥢 <span className="font-bold text-rose-700 dark:text-rose-400">Etiquette:</span> {item.dining_etiquette}
                   </div>
                 </div>
@@ -284,7 +284,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
                 <p className="leading-relaxed">{etiquette.tipping}</p>
               </div>
               
-              <div className="bg-rose-50 dark:bg-rose-950/10 border border-rose-200 dark:border-rose-500/15 p-3 rounded-xl flex flex-col gap-2 mt-1 shadow-sm">
+              <div className="bg-rose-50 dark:bg-rose-950/10 border border-rose-200 dark:border-rose-500/15 p-3 rounded-xl flex flex-col gap-2 mt-1 shadow-xs">
                 <span className="text-[10px] font-bold text-rose-650 dark:text-rose-400 uppercase flex items-center gap-1.5">
                   <AlertTriangle className="w-4 h-4 text-rose-500" /> Common Tourist Mistakes
                 </span>
@@ -313,12 +313,12 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[180px] overflow-y-auto pr-1">
                 {phrases.map((phrase, idx) => (
-                  <div key={idx} className="bg-white/80 dark:bg-slate-955/50 border border-slate-200 dark:border-slate-850 p-2.5 rounded-lg flex items-center justify-between gap-3 group shadow-sm">
+                  <div key={idx} className="bg-white/80 dark:bg-slate-955/50 border border-slate-200 dark:border-slate-850 p-2.5 rounded-lg flex items-center justify-between gap-3 group shadow-xs">
                     <div className="flex flex-col">
                       <span className="text-[10px] font-bold text-slate-500 dark:text-slate-405">{phrase.phrase}</span>
                       <span className="text-xs font-bold text-emerald-650 dark:text-emerald-455">{phrase.translation}</span>
                     </div>
-                    <span className="text-[9px] text-slate-500 italic bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-1.5 py-0.5 rounded flex items-center gap-1">
+                    <span className="text-[9px] text-slate-500 italic bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-1.5 py-0.5 rounded-sm flex items-center gap-1">
                       <Volume2 className="w-3 h-3 text-emerald-600 dark:text-emerald-450" />
                       "{phrase.pronunciation}"
                     </span>
@@ -336,10 +336,10 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
                 </h3>
                 <div className="flex flex-col gap-2.5 max-h-[220px] overflow-y-auto pr-1">
                   {events.map((event, idx) => (
-                    <div key={idx} className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 p-3 rounded-xl shadow-sm">
+                    <div key={idx} className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 p-3 rounded-xl shadow-xs">
                       <div className="flex items-center justify-between gap-2">
                         <h4 className="text-xs font-bold text-emerald-650 dark:text-emerald-400">{event.name}</h4>
-                        <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 px-2 py-0.5 rounded">
+                        <span className="text-[9px] text-slate-500 dark:text-slate-400 font-bold bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-850 px-2 py-0.5 rounded-sm">
                           {event.timing}
                         </span>
                       </div>
@@ -386,9 +386,9 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
                 <ShieldAlert className="w-4 h-4 text-rose-500" /> Safety Manual & Contacts
               </h3>
               <div className="flex flex-col gap-2 text-[11px]">
-                <div className="flex justify-between items-center bg-rose-50 dark:bg-rose-955/15 border border-rose-100 dark:border-rose-900/30 p-2.5 rounded-lg shadow-sm">
+                <div className="flex justify-between items-center bg-rose-50 dark:bg-rose-955/15 border border-rose-100 dark:border-rose-900/30 p-2.5 rounded-lg shadow-xs">
                   <span className="font-bold text-rose-700 dark:text-rose-455">🚨 Local Emergency Contact:</span>
-                  <span className="font-bold text-rose-600 dark:text-rose-400 px-2 py-0.5 bg-rose-100 dark:bg-rose-500/10 rounded">{safety.emergency_number}</span>
+                  <span className="font-bold text-rose-600 dark:text-rose-400 px-2 py-0.5 bg-rose-100 dark:bg-rose-500/10 rounded-sm">{safety.emergency_number}</span>
                 </div>
                 <div className="mt-1">
                   <span className="font-bold text-slate-600 dark:text-slate-400">🚫 Common Tourist Scams:</span>
@@ -405,15 +405,15 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
                 <CheckSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-450" /> Customized Packing Checklist
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
-                <div className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 p-2.5 rounded-lg shadow-sm">
+                <div className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 p-2.5 rounded-lg shadow-xs">
                   <span className="font-bold text-emerald-655 dark:text-emerald-450 block mb-1">💼 Essentials</span>
                   {packing.essentials.map((item, i) => <div key={i} className="text-slate-600 dark:text-slate-400 py-0.5">✓ {item}</div>)}
                 </div>
-                <div className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 p-2.5 rounded-lg shadow-sm">
+                <div className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 p-2.5 rounded-lg shadow-xs">
                   <span className="font-bold text-emerald-655 dark:text-emerald-450 block mb-1">🌤️ Seasonal</span>
                   {packing.seasonal_items.map((item, i) => <div key={i} className="text-slate-600 dark:text-slate-400 py-0.5">✓ {item}</div>)}
                 </div>
-                <div className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 p-2.5 rounded-lg shadow-sm">
+                <div className="bg-white/60 dark:bg-slate-955/40 border border-slate-200 dark:border-slate-850 p-2.5 rounded-lg shadow-xs">
                   <span className="font-bold text-emerald-655 dark:text-emerald-455 block mb-1">🕌 Cultural</span>
                   {packing.cultural_items.map((item, i) => <div key={i} className="text-slate-600 dark:text-slate-400 py-0.5">✓ {item}</div>)}
                 </div>

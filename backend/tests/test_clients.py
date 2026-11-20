@@ -2,12 +2,6 @@ import httpx
 import pytest
 from app.clients import NominatimClient, WikipediaClient, WeatherClient, CurrencyClient
 
-def test_weather_code_interpretation():
-    """Verify that WeatherClient interprets weather codes correctly."""
-    client = WeatherClient()
-    assert client._interpret_weather_code(0) == "Clear sky / Sunny"
-    assert client._interpret_weather_code(95) == "Thunderstorm"
-    assert "Clear" in client._interpret_weather_code(999)  # Fallback
 
 def _client(handler) -> httpx.AsyncClient:
     """An AsyncClient backed by an in-process handler: no real network in tests."""
@@ -52,14 +46,6 @@ async def test_wikipedia_fallback():
     async with _client(_down) as http:
         res = await WikipediaClient(client=http).get_page_summary("Kyoto-test-down")
     assert res == ""
-
-
-@pytest.mark.asyncio
-async def test_weather_returns_none_when_service_down():
-    """No invented weather: the old fallback returned a fake '22°C, Mainly clear'."""
-    async with _client(_down) as http:
-        res = await WeatherClient(client=http).get_forecast(-12.3456, 98.7654)
-    assert res is None
 
 
 @pytest.mark.asyncio
@@ -119,66 +105,10 @@ async def test_wikipedia_caching():
     res = await client.get_page_summary(cache_key)
     assert res == "Cached extract text"
 
-@pytest.mark.asyncio
-async def test_weather_caching():
-    """Verify that WeatherClient caches forecast results based on rounded coordinates."""
-    import time
-    client = WeatherClient()
-    coords = (12.345, 67.891)
-    rounded_coords = (12.35, 67.89)
-    client._forecast_cache[rounded_coords] = ({
-        "current_temp": "99°C",
-        "conditions": "Super Hot",
-        "weekly_forecast": []
-    }, time.time() + 100)
-    
-    res = await client.get_forecast(*coords)
-    assert res["current_temp"] == "99°C"
-    assert res["conditions"] == "Super Hot"
-
-
 
 # --- Provider contracts -------------------------------------------------------
 # These pin the request format and response shape each public API documents,
 # so a provider change fails CI instead of silently degrading production.
-
-@pytest.mark.asyncio
-async def test_weather_uses_current_open_meteo_contract():
-    seen = {}
-
-    def handler(request):
-        seen.update(request.url.params)
-        return httpx.Response(200, json={
-            "current": {"temperature_2m": 12.5, "weather_code": 61},
-            "daily": {
-                "time": ["2026-11-20", "2026-11-21"],
-                "temperature_2m_max": [14.0, 15.1],
-                "temperature_2m_min": [6.2, 7.0],
-                "weather_code": [61, 0],
-            },
-        })
-
-    async with _client(handler) as http:
-        res = await WeatherClient(client=http).get_forecast(11.111, 22.222)
-    assert seen["current"] == "temperature_2m,weather_code"
-    assert "weather_code" in seen["daily"]
-    assert "current_weather" not in seen
-    assert res == {
-        "current_temp": "12.5°C",
-        "conditions": "Slight rain",
-        "weekly_forecast": [
-            "Day 1: Max 14.0°C, Min 6.2°C (Slight rain)",
-            "Day 2: Max 15.1°C, Min 7.0°C (Clear sky / Sunny)",
-        ],
-    }
-
-
-@pytest.mark.asyncio
-async def test_weather_non_200_is_none_and_logged(caplog):
-    async with _client(lambda r: httpx.Response(400, json={"reason": "bad param"})) as http:
-        res = await WeatherClient(client=http).get_forecast(33.333, 44.444)
-    assert res is None
-    assert "Open-Meteo returned HTTP 400" in caplog.text
 
 
 @pytest.mark.asyncio

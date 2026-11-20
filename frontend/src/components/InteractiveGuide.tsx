@@ -49,7 +49,7 @@ export const InteractiveGuide: React.FC<InteractiveGuideProps> = ({
       
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-slate-200 dark:border-slate-800/60 pb-3 mb-3">
-        <div className="p-2.5 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 text-slate-950 font-bold">
+        <div className="p-2.5 rounded-xl bg-linear-to-tr from-emerald-500 to-teal-500 text-slate-950 font-bold">
           <Bot className="w-5 h-5" />
         </div>
         <div>
@@ -90,7 +90,7 @@ export const InteractiveGuide: React.FC<InteractiveGuideProps> = ({
                 }`}
               >
                 {/* Avatar */}
-                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center flex-shrink-0 ${
+                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 ${
                   isUser 
                     ? "bg-emerald-600 border-emerald-500 text-slate-950" 
                     : "bg-slate-100 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-emerald-600 dark:text-emerald-450"
@@ -101,8 +101,8 @@ export const InteractiveGuide: React.FC<InteractiveGuideProps> = ({
                 {/* Message Bubble */}
                 <div className={`rounded-2xl p-3.5 text-xs leading-relaxed border transition-all ${
                   isUser
-                    ? "bg-emerald-500/10 border-emerald-350 dark:border-emerald-500/35 text-emerald-950 dark:text-emerald-100 rounded-tr-none shadow-sm"
-                    : "bg-slate-100/80 dark:bg-slate-950/60 border-slate-200 dark:border-slate-855 text-slate-700 dark:text-slate-300 rounded-tl-none shadow-sm"
+                    ? "bg-emerald-500/10 border-emerald-350 dark:border-emerald-500/35 text-emerald-950 dark:text-emerald-100 rounded-tr-none shadow-xs"
+                    : "bg-slate-100/80 dark:bg-slate-950/60 border-slate-200 dark:border-slate-855 text-slate-700 dark:text-slate-300 rounded-tl-none shadow-xs"
                 }`}>
                   <div className="space-y-1.5 whitespace-pre-wrap">
                     {msg.content}
@@ -119,7 +119,7 @@ export const InteractiveGuide: React.FC<InteractiveGuideProps> = ({
             <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="bg-slate-100/80 dark:bg-slate-955/60 border border-slate-200 dark:border-slate-850 rounded-2xl rounded-tl-none p-4 flex items-center gap-1.5 shadow-sm">
+            <div className="bg-slate-100/80 dark:bg-slate-955/60 border border-slate-200 dark:border-slate-850 rounded-2xl rounded-tl-none p-4 flex items-center gap-1.5 shadow-xs">
               <span className="w-1.5 h-1.5 bg-emerald-600 dark:bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
               <span className="w-1.5 h-1.5 bg-emerald-600 dark:bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
               <span className="w-1.5 h-1.5 bg-emerald-600 dark:bg-emerald-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
@@ -131,7 +131,7 @@ export const InteractiveGuide: React.FC<InteractiveGuideProps> = ({
 
       {/* Floating Quick Action Suggestion Pills */}
       {itineraryContext && (
-        <div className="flex gap-1.5 overflow-x-auto pb-3 scrollbar-none flex-shrink-0">
+        <div className="flex gap-1.5 overflow-x-auto pb-3 scrollbar-none shrink-0">
           {quickActions.map((qa, idx) => (
             <button
               key={idx}
@@ -147,14 +147,14 @@ export const InteractiveGuide: React.FC<InteractiveGuideProps> = ({
       )}
 
       {/* Message input form */}
-      <form onSubmit={handleSubmit} className="flex gap-2 items-center flex-shrink-0">
+      <form onSubmit={handleSubmit} className="flex gap-2 items-center shrink-0">
         <input
           type="text"
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder={chatLoading ? "Assistant is typing..." : "Ask your local guide anything..."}
           disabled={chatLoading}
-          className="flex-1 py-3.5 px-4 bg-slate-100 dark:bg-slate-955/60 border border-slate-200 dark:border-slate-850 rounded-xl outline-none focus:ring-1 focus:ring-emerald-500/40 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-550 transition-all disabled:opacity-55"
+          className="flex-1 py-3.5 px-4 bg-slate-100 dark:bg-slate-955/60 border border-slate-200 dark:border-slate-850 rounded-xl outline-hidden focus:ring-1 focus:ring-emerald-500/40 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-550 transition-all disabled:opacity-55"
         />
         <button
           type="submit"

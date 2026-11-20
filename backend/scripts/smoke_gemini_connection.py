@@ -1,12 +1,12 @@
 import os
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 # Load settings from the local .env file
 load_dotenv()
 
 api_key = os.getenv("GEMINI_API_KEY")
-model_name = os.getenv("GEMINI_MODEL", "models/gemini-3.5-flash")
+model_name = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
 print("==================================================")
 print("       CultureLens AI - API Connection Test       ")
@@ -20,11 +20,13 @@ if not api_key:
     exit(1)
 
 try:
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(model_name)
-    
+    client = genai.Client(api_key=api_key)
+
     # Send a simple query to verify model communication
-    response = model.generate_content("Say 'CultureLens API is fully active!' in a short sentence.")
+    response = client.models.generate_content(
+        model=model_name,
+        contents="Say 'CultureLens API is fully active!' in a short sentence.",
+    )
     
     print("\n[SUCCESS] Model responded successfully!")
     print(f"Response text: \"{response.text.strip()}\"\n")

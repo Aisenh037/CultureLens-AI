@@ -17,7 +17,7 @@ class Settings:
 
     # Gemini API Credentials
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "models/gemini-3.5-flash")
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
     # Allowed CORS origins (comma-separated). There is deliberately no "*"
     # fallback: an unset value means "local dev only", never "anyone".

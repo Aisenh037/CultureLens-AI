@@ -121,7 +121,7 @@ export const App: React.FC = () => {
       <header className="sticky top-0 z-40 backdrop-blur-md bg-white/80 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-900 transition-colors print:hidden">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-emerald-400 text-slate-950 dark:text-slate-950 font-bold shadow-md shadow-emerald-500/5">
+            <div className="p-2.5 rounded-xl bg-linear-to-tr from-emerald-500 via-teal-500 to-emerald-400 text-slate-950 dark:text-slate-950 font-bold shadow-md shadow-emerald-500/5">
               <Compass className="w-5 h-5 animate-spin-slow" />
             </div>
             <div>
@@ -156,7 +156,7 @@ export const App: React.FC = () => {
         {!result && !loading && (
           <div className="max-w-4xl mx-auto w-full flex flex-col gap-6">
             <div className="text-center flex flex-col gap-2 max-w-xl mx-auto mb-4">
-              <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white bg-gradient-to-r from-emerald-600 via-slate-800 to-teal-700 dark:from-emerald-200 dark:via-slate-100 dark:to-teal-200 bg-clip-text text-transparent">
+              <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white bg-linear-to-r from-emerald-600 via-slate-800 to-teal-700 dark:from-emerald-200 dark:via-slate-100 dark:to-teal-200 bg-clip-text text-transparent">
                 Discover Deeper Culture
               </h2>
               <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
@@ -206,7 +206,7 @@ export const App: React.FC = () => {
             <div className="lg:col-span-7 flex flex-col gap-8">
               
               {/* Destination Overview Banner */}
-              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 backdrop-blur-xl relative overflow-hidden flex flex-col gap-3 shadow-sm dark:shadow-2xl">
+              <div className="p-6 rounded-3xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 backdrop-blur-xl relative overflow-hidden flex flex-col gap-3 shadow-xs dark:shadow-2xl">
                 <div className="absolute top-0 right-0 w-48 h-48 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none" />
                 
                 <div className="flex items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800/60 pb-3">

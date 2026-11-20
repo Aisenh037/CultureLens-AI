@@ -123,7 +123,7 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({
         </div>
 
         {/* Vertical Timeline */}
-        <div className="flex flex-col relative before:absolute before:top-2 before:bottom-2 before:left-[14px] before:w-[1px] before:bg-slate-250 dark:before:bg-slate-850 gap-6 mt-1">
+        <div className="flex flex-col relative before:absolute before:top-2 before:bottom-2 before:left-[14px] before:w-px before:bg-slate-250 dark:before:bg-slate-850 gap-6 mt-1">
         {currentDay.activities.map((act, idx) => {
           const matchStory = findStoryForActivity(act.activity_name);
           const isStoryExpanded = expandedStoryIndex === `${selectedDayIndex}-${idx}`;
@@ -137,7 +137,7 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({
               </div>
 
               {/* Card Container */}
-              <div className="flex-1 bg-white/80 dark:bg-slate-950/15 border border-slate-200 dark:border-slate-850 rounded-xl p-4 hover:border-slate-300 dark:hover:border-slate-800 transition-all duration-200 shadow-sm">
+              <div className="flex-1 bg-white/80 dark:bg-slate-950/15 border border-slate-200 dark:border-slate-850 rounded-xl p-4 hover:border-slate-300 dark:hover:border-slate-800 transition-all duration-200 shadow-xs">
                 
                 {/* Top Row */}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-850/60 pb-2 mb-2">
@@ -181,7 +181,7 @@ export const ItineraryTimeline: React.FC<ItineraryTimelineProps> = ({
                           isStoryExpanded ? null : `${selectedDayIndex}-${idx}`
                         )
                       }
-                      className="flex items-center gap-1 px-2.5 py-1 rounded bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 active:scale-95 transition-all font-semibold"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-sm bg-emerald-500/5 hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 active:scale-95 transition-all font-semibold"
                     >
                       <BookOpen className="w-3 h-3" />
                       {isStoryExpanded ? "Hide Story" : "Tell me the Story"}

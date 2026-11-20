@@ -22,8 +22,10 @@ vi.mock("leaflet", () => {
         bindPopup: vi.fn().mockReturnThis(),
         openPopup: vi.fn().mockReturnThis(),
       })),
+      // `new L.Icon(...)` needs a constructible mock: since Vitest 4, a
+      // vi.fn() wrapping an arrow function throws "is not a constructor".
       Icon: Object.assign(
-        vi.fn(() => ({})),
+        vi.fn(function Icon() {}),
         {
           Default: {
             prototype: {},

@@ -9,8 +9,9 @@ services:
     envVars:
       - key: GEMINI_API_KEY
         sync: false
+      # Comma-separated frontend origin(s). "*" is rejected by the app.
       - key: ALLOWED_ORIGINS
-        value: "*"
+        value: https://culturelens-ai-frontend.onrender.com
       - key: PYTHON_VERSION
         value: 3.11.9
 

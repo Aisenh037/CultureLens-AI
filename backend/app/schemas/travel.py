@@ -1,17 +1,24 @@
-from pydantic import BaseModel, Field, conint
-from typing import List, Optional, Dict
+from pydantic import BaseModel, Field, StringConstraints, conint
+from typing import Annotated, Dict, List, Literal, Optional
 
 # Request Model
+# Input bounds. Every user-controlled string is capped so a single request
+# cannot blow up prompt size (and Gemini cost) or memory.
+ShortText = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+OptionalShortText = Annotated[str, StringConstraints(strip_whitespace=True, max_length=100)]
+Tag = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
+
+
 class TravelRequest(BaseModel):
-    destination: str = Field(..., description="Target destination (e.g. Kyoto, Japan)")
-    budget: str = Field(..., description="Budget class: Budget, Mid-range, or Luxury")
+    destination: Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)] = Field(..., description="Target destination (e.g. Kyoto, Japan)")
+    budget: ShortText = Field(..., description="Budget class: Budget, Mid-range, or Luxury")
     duration_days: conint(ge=1, le=14) = Field(..., description="Trip duration in days (1 to 14)")
-    travel_style: str = Field(..., description="Solo, Couple, Family, or Friends")
-    companions: str = Field(..., description="Companion type description")
-    interests: List[str] = Field(..., description="List of user interests")
-    languages: List[str] = Field(..., description="User's preferred languages")
-    accessibility_needs: List[str] = Field(..., description="Accessibility requirements")
-    food_preference: str = Field(..., description="Dietary restrictions or culinary styles")
+    travel_style: ShortText = Field(..., description="Solo, Couple, Family, or Friends")
+    companions: OptionalShortText = Field(..., description="Companion type description")
+    interests: List[Tag] = Field(..., max_length=15, description="List of user interests")
+    languages: List[Tag] = Field(..., max_length=10, description="User's preferred languages")
+    accessibility_needs: List[Tag] = Field(..., max_length=10, description="Accessibility requirements")
+    food_preference: OptionalShortText = Field(..., description="Dietary restrictions or culinary styles")
 
 
 # Response Nested Models
@@ -153,11 +160,17 @@ class CultureLensResponse(BaseModel):
 
 
 # Chat Models
+MAX_CHAT_MESSAGE_CHARS = 2000
+MAX_CHAT_HISTORY = 20
+
+
 class ChatMessage(BaseModel):
-    role: str = Field(..., description="'user' or 'assistant'")
-    content: str = Field(..., description="Message text")
+    # Restricting the role stops a client from forging e.g. "SYSTEM:" turns
+    # inside the prompt's conversation transcript.
+    role: Literal["user", "assistant"] = Field(..., description="'user' or 'assistant'")
+    content: Annotated[str, StringConstraints(max_length=MAX_CHAT_MESSAGE_CHARS)] = Field(..., description="Message text")
 
 class ChatRequest(BaseModel):
-    message: str = Field(..., description="The user's new message")
-    history: List[ChatMessage] = Field(default=[], description="Chat log history")
+    message: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_CHAT_MESSAGE_CHARS)] = Field(..., description="The user's new message")
+    history: List[ChatMessage] = Field(default_factory=list, max_length=MAX_CHAT_HISTORY, description="Chat log history (most recent turns)")
     itinerary_context: Optional[CultureLensResponse] = Field(None, description="Current itinerary context")

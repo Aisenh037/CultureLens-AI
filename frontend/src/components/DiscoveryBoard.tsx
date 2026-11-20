@@ -7,6 +7,7 @@ import {
   Compass, HeartHandshake, Utensils, AlertTriangle, 
   Languages, Volume2, ShieldAlert, Leaf, CheckSquare, Camera, Sparkles, Accessibility, Calendar 
 } from "lucide-react";
+import { FALLBACK_HERO_IMAGE, mapsSearchUrl, safeHttpsUrl } from "../utils/safe";
 
 interface DiscoveryBoardProps {
   attractions: AttractionItem[];
@@ -130,11 +131,12 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
                     {/* Hero Image */}
                     <div className="h-32 w-full relative overflow-hidden bg-slate-900">
                       <img 
-                        src={attr.hero_image} 
+                        src={safeHttpsUrl(attr.hero_image) ?? FALLBACK_HERO_IMAGE}
                         alt={attr.name}
                         className="w-full h-full object-cover opacity-80"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800";
+                          const img = e.target as HTMLImageElement;
+                          if (img.src !== FALLBACK_HERO_IMAGE) img.src = FALLBACK_HERO_IMAGE;
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 to-transparent" />
@@ -187,7 +189,7 @@ export const DiscoveryBoard: React.FC<DiscoveryBoardProps> = ({
                           </div>
                           <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1 pt-1.5 border-t border-slate-200 dark:border-slate-850/20">
                             <span className="flex items-center gap-1"><Accessibility className="w-3 h-3" /> {attr.accessibility}</span>
-                            <a href={attr.map_link} target="_blank" rel="noopener noreferrer" className="text-emerald-600 dark:text-emerald-400 hover:underline">View Map</a>
+                            <a href={safeHttpsUrl(attr.map_link) ?? mapsSearchUrl(attr.name, attr.location)} target="_blank" rel="noopener noreferrer" className="text-emerald-600 dark:text-emerald-400 hover:underline">View Map</a>
                           </div>
                         </div>
                       )}

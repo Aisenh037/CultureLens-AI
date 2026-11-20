@@ -66,8 +66,8 @@ class WeatherClient:
         params = {
             "latitude": lat,
             "longitude": lon,
-            "current_weather": "true",
-            "daily": "temperature_2m_max,temperature_2m_min,weathercode",
+            "current": "temperature_2m,weather_code",
+            "daily": "temperature_2m_max,temperature_2m_min,weather_code",
             "timezone": "auto"
         }
         
@@ -78,17 +78,22 @@ class WeatherClient:
                 async with httpx.AsyncClient(timeout=settings.REQUEST_TIMEOUT_SECONDS) as local_client:
                     response = await local_client.get(self.url, params=params)
                     
-            if response.status_code == 200:
+            if response.status_code != 200:
+                logger.warning(
+                    "Open-Meteo returned HTTP %s for (%s, %s): %s",
+                    response.status_code, lat, lon, response.text[:200],
+                )
+            else:
                 data = response.json()
-                current = data.get("current_weather", {})
-                temp = current["temperature"]
-                wcode = current["weathercode"]
+                current = data["current"]
+                temp = current["temperature_2m"]
+                wcode = current["weather_code"]
                 
                 daily = data.get("daily", {})
                 days = daily.get("time", [])
                 max_temps = daily.get("temperature_2m_max", [])
                 min_temps = daily.get("temperature_2m_min", [])
-                wcodes = daily.get("weathercode", [])
+                wcodes = daily.get("weather_code", [])
                 
                 weekly_snippets = []
                 for i in range(min(5, len(days))):

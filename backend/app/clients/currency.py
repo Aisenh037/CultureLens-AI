@@ -21,7 +21,8 @@ class CurrencyClient:
     _cache_ttl = 3600  # ECB rates update once a day; an hour is plenty fresh.
 
     def __init__(self, client: httpx.AsyncClient = None):
-        self.url = "https://api.frankfurter.app/latest"
+        # api.frankfurter.app now 301-redirects; v1 lives on frankfurter.dev.
+        self.url = "https://api.frankfurter.dev/v1/latest"
         self.client = client
 
     async def get_usd_exchange_rates(self) -> dict[str, float]:
@@ -30,7 +31,7 @@ class CurrencyClient:
         if cached is not None and time.time() < cached[1]:
             return cached[0]
 
-        params = {"from": "USD"}
+        params = {"base": "USD"}
         try:
             if self.client:
                 response = await self.client.get(self.url, params=params)
@@ -42,7 +43,7 @@ class CurrencyClient:
             return {}
 
         if response.status_code != 200:
-            logger.warning("Frankfurter returned HTTP %s", response.status_code)
+            logger.warning("Frankfurter returned HTTP %s: %s", response.status_code, response.text[:200])
             return {}
 
         rates = {k: float(v) for k, v in response.json().get("rates", {}).items()}

@@ -20,7 +20,9 @@ async def lifespan(app: FastAPI):
     )
     app.state.http_client = httpx.AsyncClient(
         limits=limits,
-        timeout=settings.REQUEST_TIMEOUT_SECONDS
+        timeout=settings.REQUEST_TIMEOUT_SECONDS,
+        # Public APIs move (Frankfurter's 301 broke FX rates silently).
+        follow_redirects=True,
     )
     yield
     await app.state.http_client.aclose()

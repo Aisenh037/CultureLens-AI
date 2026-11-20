@@ -1,0 +1,55 @@
+# Dependency updates for the dev -> uat -> main flow.
+#
+# - Version updates open against `dev`, grouped so each ecosystem produces
+#   at most one PR a week for minor/patch bumps and one for majors.
+# - Majors are kept separate because they need migration work
+#   (e.g. Tailwind 3 -> 4, Vitest 1 -> 5 both broke the build when bumped blindly).
+# - Note: Dependabot *security* updates always target the default branch
+#   (`main`); `target-branch` only applies to scheduled version updates.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 2
+    groups:
+      frontend-minor-patch:
+        update-types: [minor, patch]
+      frontend-major:
+        update-types: [major]
+    commit-message:
+      prefix: "deps(frontend)"
+
+  - package-ecosystem: pip
+    directory: /backend
+    target-branch: dev
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 2
+    groups:
+      backend-minor-patch:
+        update-types: [minor, patch]
+      backend-major:
+        update-types: [major]
+    commit-message:
+      prefix: "deps(backend)"
+
+  - package-ecosystem: github-actions
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: monthly
+      timezone: Asia/Kolkata
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: "deps(ci)"

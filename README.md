@@ -107,7 +107,7 @@ frontend/
 
 ## Running locally
 
-**Prerequisites:** Python 3.11+, Node.js 20+, a [Gemini API key](https://aistudio.google.com/apikey).
+**Prerequisites:** Python 3.11+, Node.js 22.13+, a [Gemini API key](https://aistudio.google.com/apikey).
 
 **Backend**
 ```bash

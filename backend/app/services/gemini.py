@@ -11,14 +11,33 @@ from app.schemas.travel import CultureLensResponse
 logger = logging.getLogger("app.services.gemini")
 
 
-@lru_cache(maxsize=4)
+# Fast transient failures worth one quick retry. 504 is deliberately absent:
+# the SDK sends our timeout to Google as X-Server-Timeout, so a 504 means the
+# whole deadline was used up, and retrying would double an already long wait.
+RETRYABLE_STATUS_CODES = (429, 500, 502, 503)
+
+
+def http_options(timeout_ms: int) -> types.HttpOptions:
+    """Deadline plus one quick retry on transient errors."""
+    return types.HttpOptions(
+        timeout=timeout_ms,
+        retry_options=types.HttpRetryOptions(
+            attempts=2,  # the first try plus one retry
+            initial_delay=1.0,
+            max_delay=4.0,
+            http_status_codes=list(RETRYABLE_STATUS_CODES),
+        ),
+    )
+
+
+@lru_cache(maxsize=8)
 def _client(api_key: str, timeout_ms: int) -> genai.Client:
     """One client per (key, timeout), reused across requests.
 
     FastAPI builds a GeminiService per request; caching the client keeps its
     connection pool alive instead of re-creating it every call.
     """
-    return genai.Client(api_key=api_key, http_options=types.HttpOptions(timeout=timeout_ms))
+    return genai.Client(api_key=api_key, http_options=http_options(timeout_ms))
 
 
 class GeminiService:
@@ -32,7 +51,10 @@ class GeminiService:
 
     def __init__(self) -> None:
         self.model = settings.GEMINI_MODEL
-        self.client = _client(settings.GEMINI_API_KEY, int(settings.REQUEST_TIMEOUT_SECONDS * 1000))
+        # A full structured itinerary takes ~60-90 s to generate; chat replies
+        # are short. Separate deadlines keep chat from hanging for minutes.
+        self.client = _client(settings.GEMINI_API_KEY, int(settings.GEMINI_ITINERARY_TIMEOUT_SECONDS * 1000))
+        self.chat_client = _client(settings.GEMINI_API_KEY, int(settings.GEMINI_CHAT_TIMEOUT_SECONDS * 1000))
 
     async def generate_structured_itinerary(self, prompt: str) -> CultureLensResponse:
         """Generate an itinerary constrained to the CultureLensResponse schema."""
@@ -62,7 +84,7 @@ class GeminiService:
     async def generate_chat_response(self, prompt: str) -> str:
         """Generate conversational text for the interactive tour guide."""
         try:
-            response = await self.client.aio.models.generate_content(model=self.model, contents=prompt)
+            response = await self.chat_client.aio.models.generate_content(model=self.model, contents=prompt)
         except Exception as e:
             logger.exception("Chat response generation failed.")
             raise ValueError(f"Gemini chat failed: {e}") from e

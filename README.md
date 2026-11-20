@@ -65,7 +65,7 @@ This started as a **3.5-hour hackathon build** for Google PromptWars (4 July 202
 - **Defence in depth against prompt injection.** No character filter can stop plain-English instructions, so it is handled structurally: user text is fenced and labelled as data, chat roles are an enum, and model output is never rendered as HTML (popups are DOM text nodes; links and images must be `https:`).
 - **Abuse controls.** Per-field limits, a 256 KB body cap enforced in middleware before parsing, an explicit CORS allow-list, and per-IP rate limits on the two Gemini-backed endpoints.
 - **Supply chain.** Upgraded to FastAPI 0.165 / Starlette 1.10, Vite 8, Vitest 5, React 19, Tailwind 4, TypeScript 7, and migrated from the legacy `google-generativeai` SDK to `google-genai`, which also removed protobuf and gRPC from the runtime. `pip-audit` and `npm audit` report zero known vulnerabilities.
-- **Hermetic tests + CI.** 77 backend and 26 frontend tests run with no API key and no network (HTTP is mocked at the transport layer). GitHub Actions runs both suites and the production build on every push and PR.
+- **Hermetic tests + CI.** 92 backend and 27 frontend tests run with no API key and no network (HTTP is mocked at the transport layer). GitHub Actions runs both suites and the production build on every push and PR.
 
 ### Known limitations and trade-offs
 
@@ -131,6 +131,7 @@ npm run dev                   # http://localhost:5173
 |---|---|---|
 | `GEMINI_API_KEY` | none | Required |
 | `GEMINI_MODEL` | `gemini-3.5-flash` | Model name |
+| `GEMINI_ITINERARY_TIMEOUT_SECONDS` / `GEMINI_CHAT_TIMEOUT_SECONDS` | `150` / `60` | Deadlines, sent to Google as the server-side timeout. Transient 429/500/502/503 errors are retried once |
 | `ALLOWED_ORIGINS` | `http://localhost:5173` | Comma-separated frontend origins (`*` is ignored) |
 | `GENERATE_RATE_LIMIT` / `CHAT_RATE_LIMIT` | `5/minute;30/hour` / `20/minute` | Per-IP limits |
 | `MIN_ATTRACTION_RADIUS_KM` | `50` | Minimum radius for the attraction distance filter |
@@ -139,8 +140,8 @@ npm run dev                   # http://localhost:5173
 ## Testing
 
 ```bash
-cd backend && pip install -r requirements-dev.txt && pytest   # 77 tests, no key or network needed
-cd frontend && npm test && npm run build                      # 26 tests + type-checked build
+cd backend && pip install -r requirements-dev.txt && pytest   # 92 tests, no key or network needed
+cd frontend && npm test && npm run build                      # 27 tests + type-checked build
 ```
 
 `backend/scripts/` has two manual smoke checks that use a real key against a running server.

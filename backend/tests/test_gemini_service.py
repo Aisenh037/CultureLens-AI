@@ -91,9 +91,87 @@ async def test_chat_returns_stripped_text(monkeypatch):
         return _sdk_response("  Konnichiwa!  \n")
 
     service = GeminiService()
-    monkeypatch.setattr(service.client.aio.models, "generate_content", fake_generate)
+    monkeypatch.setattr(service.chat_client.aio.models, "generate_content", fake_generate)
     assert await service.generate_chat_response("hi") == "Konnichiwa!"
 
 
 def test_client_is_reused_across_service_instances():
     assert GeminiService().client is GeminiService().client
+
+
+# --- Deadlines and retries -----------------------------------------------------
+# These run a real SDK client against an in-process transport, so they check
+# what actually goes over the wire, not just our configuration.
+
+import httpx
+from google import genai
+from app.services.gemini import RETRYABLE_STATUS_CODES, http_options
+
+GEMINI_OK = {"candidates": [{"content": {"role": "model", "parts": [{"text": "ok"}]}}]}
+
+
+def _sdk_client(handler, timeout_ms: int) -> genai.Client:
+    opts = http_options(timeout_ms)
+    opts.httpx_async_client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+    return genai.Client(api_key="test-key-not-real", http_options=opts)
+
+
+def test_itinerary_and_chat_have_separate_deadlines():
+    service = GeminiService()
+    assert service.client._api_client._http_options.timeout == 150_000
+    assert service.chat_client._api_client._http_options.timeout == 60_000
+
+
+async def test_deadline_is_sent_to_google_as_server_timeout():
+    seen = {}
+
+    def handler(request):
+        seen["timeout"] = request.headers.get("x-server-timeout")
+        return httpx.Response(200, json=GEMINI_OK)
+
+    client = _sdk_client(handler, 150_000)
+    await client.aio.models.generate_content(model="gemini-3.5-flash", contents="hi")
+    assert seen["timeout"] == "150"
+
+
+@pytest.mark.parametrize("status", RETRYABLE_STATUS_CODES)
+async def test_transient_error_is_retried_once(status):
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        if len(calls) == 1:
+            return httpx.Response(status, json={"error": {"code": status, "message": "transient", "status": "X"}})
+        return httpx.Response(200, json=GEMINI_OK)
+
+    client = _sdk_client(handler, 150_000)
+    response = await client.aio.models.generate_content(model="gemini-3.5-flash", contents="hi")
+    assert response.text == "ok"
+    assert len(calls) == 2
+
+
+async def test_deadline_exceeded_is_not_retried():
+    """A 504 means the full deadline was spent; retrying would double the wait."""
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        return httpx.Response(504, json={"error": {"code": 504, "message": "Deadline expired", "status": "DEADLINE_EXCEEDED"}})
+
+    client = _sdk_client(handler, 150_000)
+    with pytest.raises(Exception):
+        await client.aio.models.generate_content(model="gemini-3.5-flash", contents="hi")
+    assert len(calls) == 1
+
+
+async def test_retry_gives_up_after_one_retry():
+    calls = []
+
+    def handler(request):
+        calls.append(1)
+        return httpx.Response(503, json={"error": {"code": 503, "message": "overloaded", "status": "UNAVAILABLE"}})
+
+    client = _sdk_client(handler, 150_000)
+    with pytest.raises(Exception):
+        await client.aio.models.generate_content(model="gemini-3.5-flash", contents="hi")
+    assert len(calls) == 2

@@ -18,6 +18,10 @@ class Settings:
     # Gemini API Credentials
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
     GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+    # Sent to Google as the server-side deadline. A full itinerary was taking
+    # 60-90 s, so 90 s caused intermittent 504 DEADLINE_EXCEEDED in production.
+    GEMINI_ITINERARY_TIMEOUT_SECONDS: float = float(os.getenv("GEMINI_ITINERARY_TIMEOUT_SECONDS", "150"))
+    GEMINI_CHAT_TIMEOUT_SECONDS: float = float(os.getenv("GEMINI_CHAT_TIMEOUT_SECONDS", "60"))
 
     # Allowed CORS origins (comma-separated). There is deliberately no "*"
     # fallback: an unset value means "local dev only", never "anyone".

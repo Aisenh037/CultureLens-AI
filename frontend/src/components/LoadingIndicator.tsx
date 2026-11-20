@@ -1,7 +1,16 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Compass } from "lucide-react";
 
 export const LoadingIndicator: React.FC = () => {
+  // A full itinerary takes Gemini 1-2 minutes; a visible clock tells people
+  // the page is still working rather than frozen.
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const started = Date.now();
+    const id = window.setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
   return (
     <div
       className="flex flex-col gap-6 w-full max-w-6xl mx-auto p-6 rounded-3xl bg-slate-900/60 border border-slate-800/80 shadow-2xl text-slate-100 transition-all animate-pulse"
@@ -18,6 +27,9 @@ export const LoadingIndicator: React.FC = () => {
           </h3>
           <p className="text-xs text-slate-400">
             Consulting heritage records, discovery databases, seasonal events, and local menus to craft your custom experience.
+          </p>
+          <p className="text-xs text-slate-300 mt-1" data-testid="loading-eta">
+            This usually takes 1–2 minutes · {elapsed}s elapsed
           </p>
         </div>
       </div>

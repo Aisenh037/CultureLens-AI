@@ -9,7 +9,7 @@ from app.utils.geo import haversine_km, search_radius_km
 from tests.factories import make_attraction, make_response
 
 KYOTO = {
-    "name": "Kyoto, Japan", "latitude": 35.0116, "longitude": 135.7681,
+    "name": "Kyoto, Kyoto Prefecture, Japan", "short_name": "Kyoto", "latitude": 35.0116, "longitude": 135.7681,
     "country": "Japan", "country_code": "JP",
     "bounding_box": [34.87, 35.32, 135.56, 135.88],
 }
@@ -28,7 +28,7 @@ def make_orchestrator(geo=KYOTO, weather=REAL_WEATHER, rates=None, response=None
     orch = TravelOrchestrator(
         nominatim=AsyncMock(get_coordinates=AsyncMock(return_value=geo)),
         wikipedia=AsyncMock(
-            get_page_summary=AsyncMock(return_value="Kyoto was the imperial capital."),
+            get_destination_summary=AsyncMock(return_value="Kyoto was the imperial capital."),
             search_heritage_sites=AsyncMock(return_value=[]),
         ),
         weather=AsyncMock(get_forecast=AsyncMock(return_value=weather)),
@@ -115,3 +115,18 @@ def test_haversine_known_distance():
 
 def test_search_radius_uses_minimum_without_bounding_box():
     assert search_radius_km(0.0, 0.0, None, min_radius_km=50) == 50
+
+
+async def test_wikipedia_is_queried_by_place_name_not_raw_input():
+    orch, _ = make_orchestrator()
+    await orch.run_pipeline(REQUEST)  # user typed "Kyoto, Japan"
+    candidates = orch.wikipedia.get_destination_summary.call_args.args[0]
+    assert candidates[0] == "Kyoto"
+    assert candidates[1] == "Kyoto, Japan"
+    orch.wikipedia.search_heritage_sites.assert_called_once_with("Kyoto Japan")
+
+
+async def test_summary_reaches_the_prompt():
+    orch, gemini = make_orchestrator()
+    await orch.run_pipeline(REQUEST)
+    assert "Wikipedia Historical Overview: Kyoto was the imperial capital." in sent_prompt(gemini)

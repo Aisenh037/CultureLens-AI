@@ -161,3 +161,69 @@ async def test_nominatim_requests_english_names():
     async with _client(handler) as http:
         await NominatimClient(client=http).get_coordinates("Kyoto-test-lang")
     assert seen["lang"] == "en"
+
+
+
+@pytest.mark.asyncio
+async def test_nominatim_returns_short_place_name():
+    payload = [{
+        "name": "Kyoto", "display_name": "Kyoto, Kyoto Prefecture, Japan",
+        "lat": "35.01", "lon": "135.76", "address": {"country": "Japan", "country_code": "jp"},
+    }]
+    async with _client(lambda r: httpx.Response(200, json=payload)) as http:
+        res = await NominatimClient(client=http).get_coordinates("Kyoto-test-short")
+    assert res["short_name"] == "Kyoto"
+    assert res["name"] == "Kyoto, Kyoto Prefecture, Japan"
+
+
+@pytest.mark.asyncio
+async def test_nominatim_short_name_falls_back_to_first_part_of_input():
+    payload = [{"display_name": "X", "lat": "1", "lon": "2", "address": {"country": "Y", "country_code": "yy"}}]
+    async with _client(lambda r: httpx.Response(200, json=payload)) as http:
+        res = await NominatimClient(client=http).get_coordinates("Atlantis-test-fallback, Ocean")
+    assert res["short_name"] == "Atlantis-test-fallback"
+
+
+def _wiki_handler(pages: dict):
+    """Serve REST summary responses by title; unknown titles are 404."""
+    seen = []
+
+    def handler(request):
+        title = request.url.path.rsplit("/", 1)[-1]
+        from urllib.parse import unquote
+        title = unquote(title)
+        seen.append(title)
+        if title in pages:
+            return httpx.Response(200, json=pages[title])
+        return httpx.Response(404, json={"title": "Not found."})
+    return handler, seen
+
+
+@pytest.mark.asyncio
+async def test_destination_summary_tries_candidates_in_order():
+    handler, seen = _wiki_handler({"Kyoto-t1": {"type": "standard", "extract": "Kyoto is a city."}})
+    async with _client(handler) as http:
+        res = await WikipediaClient(client=http).get_destination_summary(["Kyoto-t1", "Kyoto-t1, Japan"])
+    assert res == "Kyoto is a city."
+    assert seen == ["Kyoto-t1"]  # stops at the first hit
+
+
+@pytest.mark.asyncio
+async def test_destination_summary_skips_disambiguation_and_missing_pages():
+    handler, seen = _wiki_handler({
+        "Cambridge-t2": {"type": "disambiguation", "extract": "Cambridge may refer to:"},
+        "Cambridge-t2, United Kingdom": {"type": "standard", "extract": "Cambridge is a city in England."},
+    })
+    async with _client(handler) as http:
+        res = await WikipediaClient(client=http).get_destination_summary(
+            ["Nowhere-t2", "Cambridge-t2", "", "cambridge-t2", "Cambridge-t2, United Kingdom"]
+        )
+    assert res == "Cambridge is a city in England."
+    assert seen == ["Nowhere-t2", "Cambridge-t2", "Cambridge-t2, United Kingdom"]  # blank and duplicate skipped
+
+
+@pytest.mark.asyncio
+async def test_destination_summary_empty_when_nothing_matches():
+    handler, _ = _wiki_handler({})
+    async with _client(handler) as http:
+        assert await WikipediaClient(client=http).get_destination_summary(["Nowhere-t3"]) == ""

@@ -69,8 +69,12 @@ class NominatimClient:
         except (TypeError, ValueError):
             bounding_box = None
 
+        short_name = (first.get("name") or destination.split(",")[0]).strip()
         result = {
             "name": first.get("display_name", destination),
+            # The place itself ("Kyoto"), for lookups that need a title rather
+            # than a full address ("Kyoto, Kyoto Prefecture, Japan").
+            "short_name": short_name,
             "latitude": float(first["lat"]),
             "longitude": float(first["lon"]),
             "country": address.get("country", ""),

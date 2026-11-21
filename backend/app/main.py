@@ -8,7 +8,8 @@ from slowapi.errors import RateLimitExceeded
 
 from app.config import settings
 from app.rate_limit import limiter
-from app.routers import travel
+from app.db import Database
+from app.routers import experiments, travel
 
 
 @asynccontextmanager
@@ -24,8 +25,11 @@ async def lifespan(app: FastAPI):
         # Public APIs move (Frankfurter's 301 broke FX rates silently).
         follow_redirects=True,
     )
+    app.state.db = Database(settings.DATABASE_URL or None)
+    await app.state.db.create_tables()
     yield
     await app.state.http_client.aclose()
+    await app.state.db.dispose()
 
 
 app = FastAPI(
@@ -69,6 +73,7 @@ app.add_middleware(
 )
 
 app.include_router(travel.router)
+app.include_router(experiments.router)
 
 
 @app.get("/")

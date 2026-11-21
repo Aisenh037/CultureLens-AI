@@ -11,3 +11,6 @@ os.environ.setdefault("ALLOWED_ORIGINS", "http://localhost:5173")
 # Rate limiting is exercised explicitly in its own test; keep it off elsewhere
 # so repeated TestClient calls from 127.0.0.1 are not throttled.
 os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+# Experiments run against an in-memory SQLite database in tests.
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite://")
+os.environ.setdefault("ADMIN_TOKEN", "test-admin-token")

@@ -36,6 +36,13 @@ class Settings:
     MAX_CONTENT_LENGTH: int = int(os.getenv("MAX_CONTENT_LENGTH", str(256 * 1024)))  # 256 KB
     REQUEST_TIMEOUT_SECONDS: float = 90.0
 
+    # Wedge experiments (Step 1). Unset DATABASE_URL disables them.
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
+    # Protects GET /api/experiments/summary. Unset: the route answers 404.
+    ADMIN_TOKEN: str = os.getenv("ADMIN_TOKEN", "")
+    SIGNUP_RATE_LIMIT: str = os.getenv("SIGNUP_RATE_LIMIT", "5/minute;20/day")
+    EVENT_RATE_LIMIT: str = os.getenv("EVENT_RATE_LIMIT", "60/minute")
+
     # Rate limits (per client IP), slowapi syntax.
     RATE_LIMIT_ENABLED: bool = _env_bool("RATE_LIMIT_ENABLED", True)
     GENERATE_RATE_LIMIT: str = os.getenv("GENERATE_RATE_LIMIT", "5/minute;30/hour")

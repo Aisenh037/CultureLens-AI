@@ -19,6 +19,57 @@
 }
 
 /*
+  In-between shades used throughout the components (e.g. slate-850,
+  emerald-450). Tailwind has never shipped these, so they used to generate
+  no CSS at all: borders, skeleton bars and text colours silently vanished.
+  Each is defined as a blend of its two real neighbours, weighted by
+  distance (slate-850 = 50% slate-800 + 50% slate-900), which keeps the
+  intended look without rewriting ~190 class uses. Values above 950 map to 950.
+*/
+@theme {
+  --color-emerald-250: color-mix(in oklab, var(--color-emerald-200) 50%, var(--color-emerald-300));
+  --color-emerald-350: color-mix(in oklab, var(--color-emerald-300) 50%, var(--color-emerald-400));
+  --color-emerald-450: color-mix(in oklab, var(--color-emerald-400) 50%, var(--color-emerald-500));
+  --color-emerald-455: color-mix(in oklab, var(--color-emerald-400) 45%, var(--color-emerald-500));
+  --color-emerald-550: color-mix(in oklab, var(--color-emerald-500) 50%, var(--color-emerald-600));
+  --color-emerald-650: color-mix(in oklab, var(--color-emerald-600) 50%, var(--color-emerald-700));
+  --color-emerald-655: color-mix(in oklab, var(--color-emerald-600) 45%, var(--color-emerald-700));
+  --color-rose-450: color-mix(in oklab, var(--color-rose-400) 50%, var(--color-rose-500));
+  --color-rose-455: color-mix(in oklab, var(--color-rose-400) 45%, var(--color-rose-500));
+  --color-rose-650: color-mix(in oklab, var(--color-rose-600) 50%, var(--color-rose-700));
+  --color-rose-955: var(--color-rose-950);
+  --color-slate-250: color-mix(in oklab, var(--color-slate-200) 50%, var(--color-slate-300));
+  --color-slate-350: color-mix(in oklab, var(--color-slate-300) 50%, var(--color-slate-400));
+  --color-slate-355: color-mix(in oklab, var(--color-slate-300) 45%, var(--color-slate-400));
+  --color-slate-405: color-mix(in oklab, var(--color-slate-400) 95%, var(--color-slate-500));
+  --color-slate-450: color-mix(in oklab, var(--color-slate-400) 50%, var(--color-slate-500));
+  --color-slate-455: color-mix(in oklab, var(--color-slate-400) 45%, var(--color-slate-500));
+  --color-slate-550: color-mix(in oklab, var(--color-slate-500) 50%, var(--color-slate-600));
+  --color-slate-605: color-mix(in oklab, var(--color-slate-600) 95%, var(--color-slate-700));
+  --color-slate-650: color-mix(in oklab, var(--color-slate-600) 50%, var(--color-slate-700));
+  --color-slate-655: color-mix(in oklab, var(--color-slate-600) 45%, var(--color-slate-700));
+  --color-slate-750: color-mix(in oklab, var(--color-slate-700) 50%, var(--color-slate-800));
+  --color-slate-755: color-mix(in oklab, var(--color-slate-700) 45%, var(--color-slate-800));
+  --color-slate-850: color-mix(in oklab, var(--color-slate-800) 50%, var(--color-slate-900));
+  --color-slate-855: color-mix(in oklab, var(--color-slate-800) 45%, var(--color-slate-900));
+  --color-slate-955: var(--color-slate-950);
+  --color-violet-650: color-mix(in oklab, var(--color-violet-600) 50%, var(--color-violet-700));
+
+  --animate-fade-in: fade-in 0.4s ease-out both;
+  --animate-slide-down: slide-down 0.3s ease-out both;
+  --animate-spin-slow: spin 3s linear infinite;
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-down {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/*
   The default border color has changed to `currentcolor` in Tailwind CSS v4,
   so we've added these compatibility styles to make sure everything still
   looks the same as it did with Tailwind CSS v3.

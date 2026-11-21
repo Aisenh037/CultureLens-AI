@@ -64,9 +64,13 @@ class TravelOrchestrator:
         country_code = geo_context["country_code"]
 
         # 2. Concurrent fact retrieval.
+        # Wikipedia titles are place names ("Kyoto"), not what users type
+        # ("Kyoto, Japan"), so look up by the geocoded name first.
+        short_name = geo_context.get("short_name") or request.destination.split(",")[0].strip()
+        summary_candidates = [short_name, f"{short_name}, {country}" if country else "", request.destination]
         wiki_summary, wiki_heritage, weather_data, exchange_rates = await asyncio.gather(
-            self.wikipedia.get_page_summary(request.destination),
-            self.wikipedia.search_heritage_sites(request.destination),
+            self.wikipedia.get_destination_summary(summary_candidates),
+            self.wikipedia.search_heritage_sites(f"{short_name} {country}".strip()),
             self.weather.get_forecast(lat, lon),
             self.currency.get_usd_exchange_rates(),
         )

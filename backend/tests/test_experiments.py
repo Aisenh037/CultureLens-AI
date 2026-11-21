@@ -1,0 +1,144 @@
+"""Waitlist, funnel events and the admin summary for the Step-1 wedge tests."""
+import pytest
+from fastapi.testclient import TestClient
+
+from app.config import settings
+from app.db import Database, ExperimentEvent, WaitlistSignup, normalise_url
+from app.main import app
+
+ADMIN = {"X-Admin-Token": "test-admin-token"}
+
+
+@pytest.fixture
+def client():
+    # Entering the context runs the lifespan (creates the tables). Rows are
+    # cleared first so the suite also runs against a persistent Postgres.
+    with TestClient(app) as c:
+        async def wipe():
+            async with app.state.db.engine.begin() as conn:
+                for table in (WaitlistSignup.__table__, ExperimentEvent.__table__):
+                    await conn.execute(table.delete())
+        c.portal.call(wipe)
+        yield c
+
+
+def signup(client, **overrides):
+    body = {"wedge": "travellers-abroad", "email": "Asha@Example.com", "consent": True,
+            "visitor_id": "visitor-0001", "source": "reddit"}
+    body.update(overrides)
+    return client.post("/api/experiments/waitlist", json=body)
+
+
+def event(client, wedge, kind, visitor):
+    return client.post("/api/experiments/events", json={"wedge": wedge, "event": kind, "visitor_id": visitor})
+
+
+# --- Waitlist -----------------------------------------------------------------
+
+def test_signup_is_stored(client):
+    res = signup(client, name="Asha", role="student", note="Going to Japan in May", wants_interview=True)
+    assert res.status_code == 201
+    assert res.json() == {"status": "ok"}
+    summary = client.get("/api/experiments/summary", headers=ADMIN).json()
+    abroad = next(w for w in summary["wedges"] if w["wedge"] == "travellers-abroad")
+    assert abroad["signups"] == 1
+    assert abroad["interview_volunteers"] == 1
+
+
+def test_duplicate_email_is_not_revealed_or_double_counted(client):
+    first = signup(client)
+    again = signup(client, email="  asha@example.COM ")  # same address, different case/spacing
+    assert first.status_code == again.status_code == 201
+    assert first.json() == again.json()  # no "already registered" leak
+    summary = client.get("/api/experiments/summary", headers=ADMIN).json()
+    assert next(w for w in summary["wedges"] if w["wedge"] == "travellers-abroad")["signups"] == 1
+
+
+def test_same_email_can_join_different_wedges(client):
+    signup(client, wedge="travellers-abroad")
+    signup(client, wedge="heritage-stories")
+    counts = {w["wedge"]: w["signups"] for w in client.get("/api/experiments/summary", headers=ADMIN).json()["wedges"]}
+    assert counts == {"travellers-abroad": 1, "tour-operators": 0, "heritage-stories": 1}
+
+
+@pytest.mark.parametrize("overrides", [
+    {"consent": False},
+    {"email": "not-an-email"},
+    {"wedge": "space-tourism"},
+    {"name": "x" * 101},
+    {"note": "x" * 501},
+    {"visitor_id": "bad id with spaces"},
+    {"source": "<script>"},
+])
+def test_signup_rejects_bad_input(client, overrides):
+    assert signup(client, **overrides).status_code == 422
+
+
+# --- Events -------------------------------------------------------------------
+
+def test_events_are_recorded(client):
+    assert event(client, "tour-operators", "view", "visitor-aaaa").status_code == 204
+    assert event(client, "tour-operators", "pay_click", "visitor-aaaa").status_code == 204
+
+
+@pytest.mark.parametrize("kind", ["signup", "purchase", ""])
+def test_clients_cannot_send_other_event_kinds(client, kind):
+    """Signups are counted by the server from real waitlist rows, never claimed by the client."""
+    assert event(client, "tour-operators", kind, "visitor-aaaa").status_code == 422
+
+
+# --- Summary ------------------------------------------------------------------
+
+def test_summary_counts_unique_visitors_and_rates(client):
+    for v in ("visitor-0001", "visitor-0002", "visitor-0003", "visitor-0004"):
+        event(client, "heritage-stories", "view", v)
+    event(client, "heritage-stories", "view", "visitor-0001")       # repeat view, same visitor
+    event(client, "heritage-stories", "pay_click", "visitor-0001")
+    event(client, "heritage-stories", "pay_click", "visitor-0001")  # double click, same visitor
+    signup(client, wedge="heritage-stories", visitor_id="visitor-0001")
+
+    stats = next(w for w in client.get("/api/experiments/summary", headers=ADMIN).json()["wedges"]
+                 if w["wedge"] == "heritage-stories")
+    assert stats == {
+        "wedge": "heritage-stories", "visitors": 4, "pay_clickers": 1, "signups": 1,
+        "interview_volunteers": 0, "pay_click_rate": 0.25, "signup_rate": 0.25,
+    }
+
+
+def test_summary_with_no_traffic_has_no_rates(client):
+    stats = client.get("/api/experiments/summary", headers=ADMIN).json()["wedges"]
+    assert [w["wedge"] for w in stats] == ["travellers-abroad", "tour-operators", "heritage-stories"]
+    assert all(w["pay_click_rate"] is None and w["signup_rate"] is None for w in stats)
+
+
+@pytest.mark.parametrize("headers", [{}, {"X-Admin-Token": "wrong"}])
+def test_summary_requires_the_admin_token(client, headers):
+    assert client.get("/api/experiments/summary", headers=headers).status_code == 401
+
+
+def test_summary_is_hidden_when_no_token_is_configured(client, monkeypatch):
+    monkeypatch.setattr(settings, "ADMIN_TOKEN", "")
+    assert client.get("/api/experiments/summary", headers=ADMIN).status_code == 404
+
+
+# --- Without a database -------------------------------------------------------
+
+def test_endpoints_answer_503_without_a_database(client):
+    app.state.db = Database(None)
+    assert signup(client).status_code == 503
+    assert event(client, "tour-operators", "view", "visitor-aaaa").status_code == 503
+
+
+def test_travel_api_unaffected_without_a_database(client):
+    app.state.db = Database(None)
+    assert client.get("/").status_code == 200
+
+
+@pytest.mark.parametrize("raw,expected", [
+    ("postgres://u:p@host:5432/db", "postgresql+asyncpg://u:p@host:5432/db"),
+    ("postgresql://u:p@host/db", "postgresql+asyncpg://u:p@host/db"),
+    ("postgresql+asyncpg://u:p@host/db", "postgresql+asyncpg://u:p@host/db"),
+    ("sqlite+aiosqlite://", "sqlite+aiosqlite://"),
+])
+def test_render_database_urls_are_normalised(raw, expected):
+    assert normalise_url(raw) == expected

@@ -30,7 +30,8 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_PASSWORD: postgres
+          # Throwaway container that lives only for this job; no password needed.
+          POSTGRES_HOST_AUTH_METHOD: trust
           POSTGRES_DB: culturelens_test
         ports: ["5432:5432"]
         options: >-
@@ -39,7 +40,7 @@ jobs:
       run:
         working-directory: backend
     env:
-      DATABASE_URL: postgres://postgres:postgres@localhost:5432/culturelens_test
+      DATABASE_URL: postgres://postgres@localhost:5432/culturelens_test
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7

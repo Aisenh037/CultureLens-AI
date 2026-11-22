@@ -4,9 +4,12 @@ Privacy: we store only what the visitor types (email, optional name/role/note),
 an anonymous random visitor id generated in their browser, and the campaign
 source from the URL. No IP addresses, no user agents.
 """
+import csv
 import hmac
+import io
 import logging
 from collections.abc import AsyncIterator
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from sqlalchemy import distinct, func, select
@@ -17,7 +20,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.db import ExperimentEvent, WaitlistSignup
 from app.rate_limit import limiter
-from app.schemas.experiments import WEDGES, EventRequest, ExperimentSummary, SignupRequest, WedgeStats
+from app.schemas.experiments import (
+    WEDGES, EventRequest, ExperimentSummary, SignupOut, SignupRequest, Wedge, WedgeStats,
+)
 
 logger = logging.getLogger("app.routers.experiments")
 
@@ -108,3 +113,47 @@ async def summary(x_admin_token: str | None = Header(default=None), session: Asy
             pay_click_rate=rate(clickers, visitors), signup_rate=rate(n_signups, visitors),
         ))
     return ExperimentSummary(wedges=wedges)
+
+
+SIGNUP_FIELDS = ("created_at", "wedge", "email", "name", "role", "note", "wants_interview", "source")
+
+
+def _csv_safe(value) -> str:
+    """Stop spreadsheet apps treating visitor-typed text as a formula (CSV injection)."""
+    text = "" if value is None else str(value)
+    return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
+
+
+@router.get("/signups", response_model=list[SignupOut])
+async def list_signups(
+    wedge: Optional[Wedge] = None,
+    interview_only: bool = False,
+    format: Literal["json", "csv"] = "json",
+    x_admin_token: str | None = Header(default=None),
+    session: AsyncSession = Depends(get_session),
+):
+    """Everyone on the waitlist, newest first, so you can reach out. Admin only."""
+    _require_admin(x_admin_token)
+
+    query = select(WaitlistSignup).order_by(WaitlistSignup.created_at.desc(), WaitlistSignup.id.desc())
+    if wedge:
+        query = query.where(WaitlistSignup.wedge == wedge)
+    if interview_only:
+        query = query.where(WaitlistSignup.wants_interview.is_(True))
+    rows = (await session.execute(query)).scalars().all()
+
+    if format == "json":
+        return [SignupOut.model_validate(r, from_attributes=True) for r in rows]
+
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow(SIGNUP_FIELDS)
+    for r in rows:
+        writer.writerow([_csv_safe(getattr(r, f).isoformat() if f == "created_at" else getattr(r, f))
+                         for f in SIGNUP_FIELDS])
+    return Response(
+        content="\ufeff" + buffer.getvalue(),  # BOM so Excel reads ₹ and non-Latin names correctly
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="culturelens-signups.csv"',
+                 "Cache-Control": "no-store"},
+    )

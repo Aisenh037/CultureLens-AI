@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, EmailStr, Field, StringConstraints
@@ -46,3 +47,14 @@ class WedgeStats(BaseModel):
 
 class ExperimentSummary(BaseModel):
     wedges: list[WedgeStats]
+
+
+class SignupOut(BaseModel):
+    created_at: datetime
+    wedge: str
+    email: str
+    name: Optional[str] = None
+    role: Optional[str] = None
+    note: Optional[str] = None
+    wants_interview: bool
+    source: Optional[str] = None

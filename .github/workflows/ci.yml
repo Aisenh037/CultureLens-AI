@@ -49,7 +49,7 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements*.txt
       - run: pip install -r requirements-dev.txt
-      - run: pytest -q tests/test_experiments.py
+      - run: pytest -q tests/test_experiments.py tests/test_feedback.py
 
   frontend:
     runs-on: ubuntu-latest

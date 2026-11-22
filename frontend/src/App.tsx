@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { TravelForm } from "./components/TravelForm";
 import { ItineraryTimeline } from "./components/ItineraryTimeline";
+import { FeedbackCard } from "./components/FeedbackCard";
+import { InstallButton } from "./components/InstallButton";
 import { DiscoveryBoard } from "./components/DiscoveryBoard";
 import { InteractiveGuide } from "./components/InteractiveGuide";
 import { InteractiveMap } from "./components/InteractiveMap";
@@ -145,6 +147,7 @@ export const App: React.FC = () => {
                 Configure New Trip
               </button>
             )}
+            <InstallButton />
             <ThemeToggle />
           </div>
         </div>
@@ -269,6 +272,11 @@ export const App: React.FC = () => {
                   itinerary={result.itinerary} 
                   stories={result.stories} 
                 />
+              </section>
+
+              {/* Reviews: real-world feedback on each generated itinerary */}
+              <section aria-label="Itinerary feedback">
+                <FeedbackCard key={`${result.destination.name}-${result.summary.length}`} destination={result.destination.name} />
               </section>
 
               {/* Discovery Card Board */}

@@ -44,6 +44,7 @@ class Settings:
     TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
     TELEGRAM_CHAT_ID: str = os.getenv("TELEGRAM_CHAT_ID", "")
     SIGNUP_RATE_LIMIT: str = os.getenv("SIGNUP_RATE_LIMIT", "5/minute;20/day")
+    FEEDBACK_RATE_LIMIT: str = os.getenv("FEEDBACK_RATE_LIMIT", "10/hour")
     EVENT_RATE_LIMIT: str = os.getenv("EVENT_RATE_LIMIT", "60/minute")
 
     # Rate limits (per client IP), slowapi syntax.

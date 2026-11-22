@@ -42,6 +42,20 @@ def format_signup(wedge: str, email: str, name: str | None, role: str | None,
     return "\n".join(lines)
 
 
+def format_feedback(helpful: bool, comment: str | None, destination: str | None, name: str | None,
+                    email: str | None, can_quote: bool, kind: str) -> str:
+    lines = [f"New feedback: {'👍 useful' if helpful else '👎 not useful'}" + (f" ({destination})" if destination else "")]
+    if comment:
+        lines.append(f"\"{comment[:500]}\"")
+    who = " ".join(x for x in [name or "", f"<{email}>" if email else ""] if x)
+    if who:
+        lines.append(f"From: {who}")
+    lines.append("Can quote: yes" if can_quote else "Can quote: no")
+    if kind != "itinerary":
+        lines.append(f"Kind: {kind}")
+    return "\n".join(lines)
+
+
 async def send_signup_alert(client: httpx.AsyncClient, text: str) -> None:
     if not alerts_enabled():
         return

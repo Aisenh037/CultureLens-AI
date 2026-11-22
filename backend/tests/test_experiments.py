@@ -1,4 +1,7 @@
 """Waitlist, funnel events and the admin summary for the Step-1 wedge tests."""
+from unittest.mock import AsyncMock
+
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
@@ -182,3 +185,41 @@ def test_signups_require_the_admin_token(client, headers):
 
 def test_signups_rejects_unknown_wedge(client):
     assert client.get("/api/experiments/signups?wedge=nope", headers=ADMIN).status_code == 422
+
+
+# --- Telegram alerts ----------------------------------------------------------
+
+@pytest.fixture
+def telegram(client, monkeypatch):
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_TOKEN", "123:secret")
+    monkeypatch.setattr(settings, "TELEGRAM_CHAT_ID", "42")
+    post = AsyncMock(return_value=httpx.Response(200))
+    monkeypatch.setattr(app.state.http_client, "post", post)
+    return post
+
+
+def test_new_signup_sends_one_alert(client, telegram):
+    signup(client, name="Ravi", role="Agency, Indore", note="40 trips a month", wants_interview=True,
+           wedge="tour-operators")
+    signup(client, wedge="tour-operators", name="Ravi")  # same email again: no second alert
+    telegram.assert_awaited_once()
+    url = telegram.call_args.args[0]
+    body = telegram.call_args.kwargs["json"]
+    assert url == "https://api.telegram.org/bot123:secret/sendMessage"
+    assert body["chat_id"] == "42" and "parse_mode" not in body
+    text = body["text"]
+    assert "Tour operators" in text and "asha@example.com" in text and "40 trips a month" in text
+    assert "reply within the hour" in text and "Source: reddit" in text
+
+
+def test_alert_failure_does_not_break_signup(client, telegram):
+    telegram.side_effect = httpx.ConnectError("down")
+    assert signup(client).status_code == 201
+
+
+def test_no_alert_when_not_configured(client, monkeypatch):
+    monkeypatch.setattr(settings, "TELEGRAM_BOT_TOKEN", "")
+    post = AsyncMock()
+    monkeypatch.setattr(app.state.http_client, "post", post)
+    assert signup(client).status_code == 201
+    post.assert_not_awaited()

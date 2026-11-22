@@ -11,7 +11,7 @@ import logging
 from collections.abc import AsyncIterator
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Header, HTTPException, Request, Response
 from sqlalchemy import distinct, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
@@ -20,6 +20,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.db import ExperimentEvent, WaitlistSignup
 from app.rate_limit import limiter
+from app.services.notify import format_signup, send_signup_alert
 from app.schemas.experiments import (
     WEDGES, EventRequest, ExperimentSummary, SignupOut, SignupRequest, Wedge, WedgeStats,
 )
@@ -44,7 +45,7 @@ def _insert(session: AsyncSession):
 @router.post("/waitlist", status_code=201)
 @limiter.limit(settings.SIGNUP_RATE_LIMIT)
 async def join_waitlist(payload: SignupRequest, request: Request, response: Response,
-                        session: AsyncSession = Depends(get_session)):
+                        background: BackgroundTasks, session: AsyncSession = Depends(get_session)):
     if not payload.consent:
         raise HTTPException(status_code=422, detail="Please agree to be emailed about the launch.")
 
@@ -59,6 +60,12 @@ async def join_waitlist(payload: SignupRequest, request: Request, response: Resp
         session.add(ExperimentEvent(wedge=payload.wedge, event="signup",
                                     visitor_id=payload.visitor_id, source=payload.source))
     await session.commit()
+
+    if result.rowcount:  # new signup, not a repeat
+        text = format_signup(payload.wedge, email, payload.name, payload.role, payload.note,
+                             payload.wants_interview, payload.source)
+        # Sent after the response, so a slow Telegram never delays the visitor.
+        background.add_task(send_signup_alert, request.app.state.http_client, text)
     # Same answer for new and existing emails, so the form can't be used to
     # check whether someone is on the list.
     return {"status": "ok"}

@@ -50,3 +50,13 @@ export function buildPopupContent(lines: PopupLine[]): HTMLElement {
   });
   return root;
 }
+
+/** "Rome, Italy"; just "Japan" when the place is the country; never "Italy, Italy". */
+export function placeLabel(name: string, country?: string | null): string {
+  const n = (name || "").trim();
+  const c = (country || "").trim();
+  if (!c || c.toLowerCase() === "unavailable") return n;
+  if (!n) return c;
+  const parts = n.split(",").map((p) => p.trim().toLowerCase());
+  return parts[parts.length - 1] === c.toLowerCase() ? n : `${n}, ${c}`;
+}

@@ -4,6 +4,12 @@ import type { WedgeConfig } from "./wedges";
 
 type Status = "idle" | "sending" | "done" | "error";
 
+/** Public contact address, set as VITE_CONTACT_EMAIL on the static site. Unset or invalid: no contact line. */
+export function contactEmail(raw: string | undefined = import.meta.env.VITE_CONTACT_EMAIL): string | null {
+  const email = (raw || "").trim();
+  return /^[^\s@<>"]+@[^\s@<>"]+\.[A-Za-z]{2,}$/.test(email) ? email : null;
+}
+
 export default function WedgeLanding({ wedge }: { wedge: WedgeConfig }) {
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -15,6 +21,7 @@ export default function WedgeLanding({ wedge }: { wedge: WedgeConfig }) {
   const [error, setError] = useState("");
   const [paywallNotice, setPaywallNotice] = useState(false);
   const formRef = useRef<HTMLElement>(null);
+  const contact = contactEmail();
   const viewed = useRef(false);
 
   useEffect(() => {
@@ -174,6 +181,12 @@ export default function WedgeLanding({ wedge }: { wedge: WedgeConfig }) {
       </main>
 
       <footer className="border-t border-slate-200 py-6 text-center text-xs text-slate-500 dark:border-slate-800">
+        {contact && (
+          <p className="mb-2 text-sm">
+            Questions or ideas? Write to{" "}
+            <a className="font-medium text-indigo-600 underline" href={`mailto:${contact}`}>{contact}</a>
+          </p>
+        )}
         CultureLens AI · <a className="underline" href="/">Free trip planner</a>
       </footer>
     </div>

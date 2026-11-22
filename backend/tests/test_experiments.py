@@ -142,3 +142,43 @@ def test_travel_api_unaffected_without_a_database(client):
 ])
 def test_render_database_urls_are_normalised(raw, expected):
     assert normalise_url(raw) == expected
+
+
+# --- Signup export ------------------------------------------------------------
+
+def test_signups_list_newest_first_with_filters(client):
+    signup(client, email="a@example.com", wedge="tour-operators", role="Agency, Bhopal", wants_interview=True)
+    signup(client, email="b@example.com", wedge="tour-operators")
+    signup(client, email="c@example.com", wedge="heritage-stories", wants_interview=True)
+
+    everyone = client.get("/api/experiments/signups", headers=ADMIN).json()
+    assert [r["email"] for r in everyone] == ["c@example.com", "b@example.com", "a@example.com"]
+    assert everyone[2]["role"] == "Agency, Bhopal" and everyone[2]["source"] == "reddit"
+
+    ops = client.get("/api/experiments/signups?wedge=tour-operators", headers=ADMIN).json()
+    assert {r["email"] for r in ops} == {"a@example.com", "b@example.com"}
+
+    callers = client.get("/api/experiments/signups?interview_only=true", headers=ADMIN).json()
+    assert {r["email"] for r in callers} == {"a@example.com", "c@example.com"}
+
+
+def test_signups_csv_is_excel_friendly_and_injection_safe(client):
+    signup(client, email="x@example.com", name="=HYPERLINK(\"http://evil\")", note="+91 98765 43210")
+    res = client.get("/api/experiments/signups?format=csv", headers=ADMIN)
+    assert res.status_code == 200
+    assert res.headers["content-type"].startswith("text/csv")
+    assert "attachment" in res.headers["content-disposition"]
+    body = res.content.decode("utf-8-sig").splitlines()
+    assert body[0] == "created_at,wedge,email,name,role,note,wants_interview,source"
+    assert "'=HYPERLINK" in body[1] and "'+91 98765 43210" in body[1]
+
+
+@pytest.mark.parametrize("headers", [{}, {"X-Admin-Token": "wrong"}])
+def test_signups_require_the_admin_token(client, headers):
+    signup(client)
+    assert client.get("/api/experiments/signups", headers=headers).status_code == 401
+    assert client.get("/api/experiments/signups?format=csv", headers=headers).status_code == 401
+
+
+def test_signups_rejects_unknown_wedge(client):
+    assert client.get("/api/experiments/signups?wedge=nope", headers=ADMIN).status_code == 422

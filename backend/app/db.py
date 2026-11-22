@@ -52,6 +52,23 @@ class ExperimentEvent(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
 
 
+class Feedback(Base):
+    """A review of a generated itinerary (or general feedback). Quotable only with consent."""
+    __tablename__ = "feedback"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    kind: Mapped[str] = mapped_column(String(20), default="itinerary")
+    helpful: Mapped[bool] = mapped_column(Boolean)
+    comment: Mapped[Optional[str]] = mapped_column(String(1000))
+    destination: Mapped[Optional[str]] = mapped_column(String(120))
+    name: Mapped[Optional[str]] = mapped_column(String(100))
+    email: Mapped[Optional[str]] = mapped_column(String(254))
+    can_quote: Mapped[bool] = mapped_column(Boolean, default=False)
+    visitor_id: Mapped[Optional[str]] = mapped_column(String(64))
+    source: Mapped[Optional[str]] = mapped_column(String(100))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, index=True)
+
+
 def normalise_url(url: str) -> str:
     """Render hands out postgres:// URLs; SQLAlchemy's async driver needs the dialect named."""
     if url.startswith("postgres://"):

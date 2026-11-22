@@ -9,7 +9,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.rate_limit import limiter
 from app.db import Database
-from app.routers import experiments, travel
+from app.routers import experiments, feedback, travel
 
 
 @asynccontextmanager
@@ -74,6 +74,7 @@ app.add_middleware(
 
 app.include_router(travel.router)
 app.include_router(experiments.router)
+app.include_router(feedback.router)
 
 
 @app.get("/")

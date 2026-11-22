@@ -80,7 +80,7 @@ async def record_event(payload: EventRequest, request: Request, session: AsyncSe
     return Response(status_code=204)
 
 
-def _require_admin(x_admin_token: str | None) -> None:
+def require_admin(x_admin_token: str | None) -> None:
     expected = settings.ADMIN_TOKEN
     # Not configured: behave as if the route doesn't exist.
     if not expected:
@@ -92,7 +92,7 @@ def _require_admin(x_admin_token: str | None) -> None:
 @router.get("/summary", response_model=ExperimentSummary)
 async def summary(x_admin_token: str | None = Header(default=None), session: AsyncSession = Depends(get_session)):
     """Per-wedge funnel: unique visitors -> unique pay-clickers -> signups."""
-    _require_admin(x_admin_token)
+    require_admin(x_admin_token)
 
     event_counts = await session.execute(
         select(ExperimentEvent.wedge, ExperimentEvent.event, func.count(distinct(ExperimentEvent.visitor_id)))
@@ -125,7 +125,7 @@ async def summary(x_admin_token: str | None = Header(default=None), session: Asy
 SIGNUP_FIELDS = ("created_at", "wedge", "email", "name", "role", "note", "wants_interview", "source")
 
 
-def _csv_safe(value) -> str:
+def csv_safe(value) -> str:
     """Stop spreadsheet apps treating visitor-typed text as a formula (CSV injection)."""
     text = "" if value is None else str(value)
     return "'" + text if text[:1] in ("=", "+", "-", "@", "\t", "\r") else text
@@ -140,7 +140,7 @@ async def list_signups(
     session: AsyncSession = Depends(get_session),
 ):
     """Everyone on the waitlist, newest first, so you can reach out. Admin only."""
-    _require_admin(x_admin_token)
+    require_admin(x_admin_token)
 
     query = select(WaitlistSignup).order_by(WaitlistSignup.created_at.desc(), WaitlistSignup.id.desc())
     if wedge:
@@ -156,7 +156,7 @@ async def list_signups(
     writer = csv.writer(buffer)
     writer.writerow(SIGNUP_FIELDS)
     for r in rows:
-        writer.writerow([_csv_safe(getattr(r, f).isoformat() if f == "created_at" else getattr(r, f))
+        writer.writerow([csv_safe(getattr(r, f).isoformat() if f == "created_at" else getattr(r, f))
                          for f in SIGNUP_FIELDS])
     return Response(
         content="\ufeff" + buffer.getvalue(),  # BOM so Excel reads ₹ and non-Latin names correctly

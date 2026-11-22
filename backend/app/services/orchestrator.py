@@ -116,7 +116,9 @@ FACTUAL DESTINATION DATA:
         # 5. Ground the output: overwrite every field we have real data for.
         result.destination.latitude = lat
         result.destination.longitude = lon
-        result.destination.name = geo_context["name"]
+        # Short place name ("Rome"), not Nominatim's full address ("Rome, Roma
+        # Capitale, Lazio, Italy"): the UI shows the country beside it.
+        result.destination.name = geo_context.get("short_name") or geo_context["name"]
         result.destination.country = country
         result.destination.currency_code = local_currency or UNAVAILABLE
 

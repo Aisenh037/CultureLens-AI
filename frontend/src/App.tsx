@@ -1,3 +1,4 @@
+import { placeLabel } from "./utils/safe";
 import React, { useState } from "react";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { TravelForm } from "./components/TravelForm";
@@ -214,7 +215,7 @@ export const App: React.FC = () => {
                     <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">CultureLens Summary</span>
                     <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
                       <MapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-450" />
-                      {result.destination.name}, {result.destination.country}
+                      {placeLabel(result.destination.name, result.destination.country)}
                     </h2>
                   </div>
 
@@ -310,7 +311,7 @@ export const App: React.FC = () => {
         {result && (
           <div className="flex flex-col gap-6">
             <div>
-              <h2 className="text-lg font-bold">Destination: {result.destination.name}, {result.destination.country}</h2>
+              <h2 className="text-lg font-bold">Destination: {placeLabel(result.destination.name, result.destination.country)}</h2>
               <p className="italic mt-1">"{result.summary}"</p>
             </div>
             

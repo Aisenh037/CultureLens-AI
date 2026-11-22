@@ -40,6 +40,9 @@ class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     # Protects GET /api/experiments/summary. Unset: the route answers 404.
     ADMIN_TOKEN: str = os.getenv("ADMIN_TOKEN", "")
+    # Telegram alert on each new signup. Unset: no alerts.
+    TELEGRAM_BOT_TOKEN: str = os.getenv("TELEGRAM_BOT_TOKEN", "")
+    TELEGRAM_CHAT_ID: str = os.getenv("TELEGRAM_CHAT_ID", "")
     SIGNUP_RATE_LIMIT: str = os.getenv("SIGNUP_RATE_LIMIT", "5/minute;20/day")
     EVENT_RATE_LIMIT: str = os.getenv("EVENT_RATE_LIMIT", "60/minute")
 

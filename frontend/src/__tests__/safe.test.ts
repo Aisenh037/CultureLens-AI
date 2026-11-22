@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildPopupContent, mapsSearchUrl, safeHttpsUrl } from "../utils/safe";
+import { buildPopupContent, mapsSearchUrl, safeHttpsUrl, placeLabel } from "../utils/safe";
 
 describe("safeHttpsUrl", () => {
   it("accepts plain https URLs", () => {
@@ -35,5 +35,17 @@ describe("buildPopupContent", () => {
     expect(node.querySelector("img")).toBeNull();
     expect(node.textContent).toContain(payload);
     expect((window as any).__xss).toBeUndefined();
+  });
+});
+
+describe("placeLabel", () => {
+  it.each([
+    ["Rome", "Italy", "Rome, Italy"],
+    ["Rome, Lazio, Italy", "Italy", "Rome, Lazio, Italy"], // regression: was "…, Italy, Italy"
+    ["Japan", "Japan", "Japan"],
+    ["Kyoto", "unavailable", "Kyoto"],
+    ["Kyoto", "", "Kyoto"],
+  ])("%s + %s → %s", (name, country, expected) => {
+    expect(placeLabel(name, country)).toBe(expected);
   });
 });

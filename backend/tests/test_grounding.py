@@ -130,3 +130,13 @@ async def test_summary_reaches_the_prompt():
     orch, gemini = make_orchestrator()
     await orch.run_pipeline(REQUEST)
     assert "Wikipedia Historical Overview: Kyoto was the imperial capital." in sent_prompt(gemini)
+
+
+async def test_destination_name_is_the_short_place_name():
+    """Regression: the header read "Rome, Roma Capitale, Lazio, Italy, Italy"."""
+    rome = {**KYOTO, "name": "Rome, Roma Capitale, Lazio, Italy", "short_name": "Rome",
+            "country": "Italy", "country_code": "IT", "latitude": 41.89, "longitude": 12.48}
+    orch, _ = make_orchestrator(geo=rome)
+    result = await orch.run_pipeline(REQUEST)
+    assert result.destination.name == "Rome"
+    assert result.destination.country == "Italy"

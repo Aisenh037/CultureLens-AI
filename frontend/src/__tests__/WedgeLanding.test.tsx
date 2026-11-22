@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import WedgeLanding from "../landing/WedgeLanding";
+import WedgeLanding, { contactEmail } from "../landing/WedgeLanding";
 import { WEDGES } from "../landing/wedges";
 import { campaignSource, visitorId } from "../landing/tracking";
 
@@ -96,5 +96,31 @@ describe("tracking helpers", () => {
     ["", undefined],
   ])("cleans the campaign source %s", (search, expected) => {
     expect(campaignSource(search)).toBe(expected);
+  });
+});
+
+describe("contact line", () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("shows the configured address as a mailto link", () => {
+    vi.stubEnv("VITE_CONTACT_EMAIL", "hello@culturelens.example");
+    render(<WedgeLanding wedge={WEDGES["tour-operators"]} />);
+    const link = screen.getByRole("link", { name: "hello@culturelens.example" });
+    expect(link).toHaveAttribute("href", "mailto:hello@culturelens.example");
+  });
+
+  it("is hidden when no address is configured", () => {
+    vi.stubEnv("VITE_CONTACT_EMAIL", "");
+    render(<WedgeLanding wedge={WEDGES["tour-operators"]} />);
+    expect(screen.queryByText(/questions or ideas/i)).not.toBeInTheDocument();
+  });
+
+  it.each([
+    [" a@b.co ", "a@b.co"],
+    ["not-an-email", null],
+    ["x@y.z\"><script>", null],
+    [undefined, null],
+  ])("validates %s", (raw, expected) => {
+    expect(contactEmail(raw as string | undefined)).toBe(expected);
   });
 });
